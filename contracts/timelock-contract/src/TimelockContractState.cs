@@ -1,11 +1,21 @@
 using AElf.Sdk.CSharp.State;
+using AElf.Types;
+using Google.Protobuf.WellKnownTypes;
 
-namespace TomorrowDAO.Contracts.Timelock
+namespace TomorrowDAO.Contracts.Timelock;
+
+// The state class is access the blockchain state
+public partial class TimelockContractState : ContractState 
 {
-    // The state class is access the blockchain state
-    public class TimelockContractState : ContractState 
-    {
-        // A state that holds string value
-        public StringState Message { get; set; }
-    }
+        
+    public BoolState Initialized { get; set; }
+        
+    public SingletonState<Address> Admin { get; set; }
+        
+    public MappedState<Hash, Timestamp> OperationExecuteTime { get; set; }
+        
+    public MappedState<Hash, OperationInput> OperationQueue { get; set; }
+        
+    public MappedState<Hash, Timestamp> OperationTime { get; set; }
+        
 }
