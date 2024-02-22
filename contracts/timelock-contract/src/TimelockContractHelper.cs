@@ -1,5 +1,7 @@
+using System;
 using AElf;
 using AElf.Types;
+using Google.Protobuf;
 
 namespace TomorrowDAO.Contracts.Timelock;
 
@@ -20,17 +22,17 @@ public partial class TimelockContract
     
     private bool VerifySignature(OperationInput input)
     {
-        var signature = input.Signature;
-        if (signature.IsNullOrEmpty()) return false;
+            var signature = input.Signature;
+            if (signature.IsNullOrEmpty()) return false;
+
+            input.Signature = ByteString.Empty;
+            var hash = HashHelper.ComputeFrom(input);
+            input.Signature = signature;
             
-        input.Signature = null;
-        var hash = HashHelper.ComputeFrom(input);
-        input.Signature = signature;
-            
-        var publicKey = Context.RecoverPublicKey(signature.ToByteArray(), hash.ToByteArray());
-        if (publicKey == null || publicKey.Length == 0) return false;
-            
-        return Address.FromPublicKey(publicKey) == Context.Sender;
+            var publicKey = Context.RecoverPublicKey(signature.ToByteArray(), hash.ToByteArray());
+            if (publicKey == null || publicKey.Length == 0) return false;
+        
+            return Address.FromPublicKey(publicKey) == Context.Sender;
     }
 
     

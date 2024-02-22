@@ -1,25 +1,32 @@
-﻿using AElf.Cryptography.ECDSA;
-using AElf.Testing.TestBase;
+﻿using AElf.ContractTestBase.ContractTestKit;
+using AElf.Cryptography.ECDSA;
 
 namespace TomorrowDAO.Contracts.Timelock
 {
-    // The Module class load the context required for unit testing
-    public class Module : ContractTestModule<TimelockContract>
+    public class Module : AElf.Testing.TestBase.ContractTestModule<TimelockContract>
     {
         
     }
     
-    // The TestBase class inherit ContractTestBase class, it defines Stub classes and gets instances required for unit testing
-    public class TestBase : ContractTestBase<Module>
+    public class TestBase : AElf.Testing.TestBase.ContractTestBase<Module>
     {
-        // The Stub class for unit testing
-        internal readonly TimelockContractContainer.TimelockContractStub TimelockContractStub;
-        // A key pair that can be used to interact with the contract instance
-        private ECKeyPair DefaultKeyPair => Accounts[0].KeyPair;
+        
+        internal Account Admin => Accounts[0];
+        internal Account User1 => Accounts[1];
+        internal Account User2 => Accounts[2];
+        internal Account User3 => Accounts[3];
 
+        internal readonly TimelockContractContainer.TimelockContractStub AdminTimelockStub;
+        internal readonly TimelockContractContainer.TimelockContractStub User1TimelockStub;
+        internal readonly TimelockContractContainer.TimelockContractStub User2TimelockStub;
+        internal readonly TimelockContractContainer.TimelockContractStub User3TimelockStub;
+        
         public TestBase()
         {
-            TimelockContractStub = GetTimelockContractStub(DefaultKeyPair);
+            AdminTimelockStub = GetTimelockContractStub(Admin.KeyPair);
+            User1TimelockStub = GetTimelockContractStub(User1.KeyPair);
+            User2TimelockStub = GetTimelockContractStub(User2.KeyPair);
+            User3TimelockStub = GetTimelockContractStub(User3.KeyPair);
         }
 
         private TimelockContractContainer.TimelockContractStub GetTimelockContractStub(ECKeyPair senderKeyPair)

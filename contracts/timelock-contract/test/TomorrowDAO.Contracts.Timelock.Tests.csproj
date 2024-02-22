@@ -35,7 +35,7 @@
         <Protobuf Include="Protobuf/message/*.proto">
             <ContractOutputOptions>nocontract</ContractOutputOptions>
         </Protobuf>
-        <Protobuf Include="Protobuf/stub/*.proto">
+        <Protobuf Include="../src/Protobuf/contract/*.proto">
             <ContractOutputOptions>stub</ContractOutputOptions>
         </Protobuf>
     </ItemGroup>
@@ -46,6 +46,10 @@
 
     <ItemGroup>
         <ProjectReference Include="../src/TomorrowDAO.Contracts.Timelock.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Protobuf\stub\" />
     </ItemGroup>
     
 </Project>

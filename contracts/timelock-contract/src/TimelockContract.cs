@@ -8,13 +8,9 @@ namespace TomorrowDAO.Contracts.Timelock
 {
     public partial class TimelockContract : TimelockContractContainer.TimelockContractBase
     {
-        public override Empty Initialized(InitializeInput input)
+        public override Empty Initialize(InitializeInput input)
         {
             Assert(!State.Initialized.Value, "Already initialized.");
-            
-            State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
-            var author = State.GenesisContract.GetContractAuthor.Call(Context.Self);
-            Assert(author == Context.Sender, "No permission.");
             Assert(input.Admin == null || !input.Admin.Value.IsNullOrEmpty(), "Invalid admin");
             
             var admin = input.Admin == null ? Context.Sender : input.Admin;
@@ -45,7 +41,7 @@ namespace TomorrowDAO.Contracts.Timelock
 
             Context.Fire(new OperationQueued
             {
-                TxHash = hash,
+                OperationHash = hash,
                 Target = input.Target,
                 Method = input.Method,
                 Param = input.Param,
@@ -61,10 +57,10 @@ namespace TomorrowDAO.Contracts.Timelock
             Assert(VerifySignature(input), "Invalid signature");
 
             var operationHash = HashHelper.ComputeFrom(input);
-            Assert(State.OperationExecuteTime[operationHash] != null, "Operation executed");
+            Assert(State.OperationExecuteTime[operationHash] == null, "Operation executed");
 
             var queuedOperation = State.OperationQueue[operationHash];
-            Assert(queuedOperation != null, "Queued operation not found");
+            Assert(queuedOperation != null, "Queued operation not exists");
             Assert(State.OperationTime[operationHash] < Context.CurrentBlockTime, "Not up to operation time");
 
             Context.SendInline(queuedOperation!.Target, queuedOperation.Method, queuedOperation.Param);
@@ -74,7 +70,7 @@ namespace TomorrowDAO.Contracts.Timelock
 
             Context.Fire(new OperationExecuted
             {
-                TxHash = Context.TransactionId,
+                OperationHash = operationHash,
                 Target = queuedOperation.Target,
                 Method = queuedOperation.Method,
                 Param = queuedOperation.Param,
@@ -91,23 +87,30 @@ namespace TomorrowDAO.Contracts.Timelock
             var operationHash = HashHelper.ComputeFrom(input);
             Assert(State.OperationQueue[operationHash] != null, "Operation hasn't been queued");
 
-            var operationTime = State.OperationTime[operationHash];
-            Assert(operationTime != null, "Queued time not exists");
-            Assert(operationTime < Context.CurrentBlockTime, "Queued time not reached");
-
+            State.OperationTime.Remove(operationHash);
+            State.OperationQueue.Remove(operationHash);
+            
+            Context.Fire(new OperationCanceled
+            {
+                OperationHash = operationHash,
+                Target = input.Target,
+                Method = input.Method,
+                Param = input.Param,
+                CancelTime = Context.CurrentBlockTime
+            });
+            
             return new Empty();
         }
 
         public override GetOperationStatusOutput GetOperationStatus(Hash input)
         {
             AssertInitialized();
-            Assert(input.Value.IsNullOrEmpty(), "Invalid input");
+            Assert(!input.Value.IsNullOrEmpty(), "Invalid input");
 
             var operationTime = State.OperationTime[input];
             var operationState = State.OperationExecuteTime[input] != null ? OperationState.Done :
-                operationTime == null ? OperationState.Unset :
+                operationTime == null ? OperationState.NotExists :
                 operationTime > Context.CurrentBlockTime ? OperationState.Waiting : OperationState.Ready;
-            Assert(operationState != OperationState.Unset, "Operation not exists");
             
             return new GetOperationStatusOutput
             {

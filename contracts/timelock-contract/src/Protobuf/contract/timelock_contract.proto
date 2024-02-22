@@ -12,7 +12,7 @@ service TimelockContract {
 
 
   // Actions
-  rpc Initialized(InitializeInput) returns (google.protobuf.Empty) {
+  rpc Initialize(InitializeInput) returns (google.protobuf.Empty) {
   }
   
   rpc QueueOperation (OperationInput) returns (aelf.Hash) {
@@ -44,6 +44,7 @@ enum OperationState {
   Waiting = 1;
   Ready = 2;
   Done = 3;
+  NotExists = 4;
 }
 
 message OperationInput {
@@ -66,7 +67,7 @@ message GetOperationStatusOutput {
 
 message OperationQueued {
   option (aelf.is_event) = true;
-  aelf.Hash txHash = 1;
+  aelf.Hash operation_hash = 1;
   aelf.Address target = 2;
   string method = 3;
   bytes param = 4;
@@ -75,7 +76,7 @@ message OperationQueued {
 
 message OperationExecuted {
   option (aelf.is_event) = true;
-  aelf.Hash txHash = 1;
+  aelf.Hash operation_hash = 1;
   aelf.Address target = 2;
   string method = 3;
   bytes param = 4;
@@ -84,7 +85,7 @@ message OperationExecuted {
 
 message OperationCanceled {
   option (aelf.is_event) = true;
-  aelf.Hash txHash = 1;
+  aelf.Hash operation_hash = 1;
   aelf.Address target = 2;
   string method = 3;
   bytes param = 4;
