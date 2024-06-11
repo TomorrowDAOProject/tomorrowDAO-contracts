@@ -14,4 +14,7 @@ public static class GovernanceContractConstants
     public const int MinVetoExecuteTimePeriod = 1; // days
     public const int MaxVetoExecuteTimePeriod = 3; // days
     public const int MaxProposalDescriptionUrlLength = 256;
+    
+    public const int MemoMaxLength = 64;
+    public const string TransferMethodName = "Transfer";
 }

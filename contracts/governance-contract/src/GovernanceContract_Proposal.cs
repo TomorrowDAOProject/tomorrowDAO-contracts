@@ -1,10 +1,11 @@
 using System;
-using System.Net.Mail;
+using System.Text;
 using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using TomorrowDAO.Contracts.DAO;
 using TomorrowDAO.Contracts.Vote;
 
 namespace TomorrowDAO.Contracts.Governance;
@@ -20,6 +21,40 @@ public partial class GovernanceContract
             "ProposalType cannot be Unused or Veto.");
         var proposal = ValidateAndGetProposalInfo(proposalId, input.ProposalBasicInfo,
             proposalType, input.Transaction);
+        State.Proposals[proposalId] = proposal;
+        State.ProposalGovernanceSchemeSnapShot[proposalId] = scheme.SchemeThreshold;
+        RegisterVotingItem(proposal, input.ProposalBasicInfo.VoteSchemeId, scheme.GovernanceToken);
+        FireProposalCreatedEvent(proposal);
+        return proposalId;
+    }
+
+    public override Hash CreateTransferProposal(CreateTransferProposalInput input)
+    {
+        var proposalId = CheckAndGetProposalId(input, input.ProposalBasicInfo, out var scheme);
+        Assert(
+            input.Memo == null || Encoding.UTF8.GetByteCount(input.Memo) <= GovernanceContractConstants.MemoMaxLength,
+            "Invalid memo size.");
+        AssertDaoSubsistAndTreasuryStatus(input.ProposalBasicInfo.DaoId, input.Symbol, input.Amount, input.Recipient);
+
+        var voteScheme = State.VoteContract.GetVoteScheme.Call(input.ProposalBasicInfo.VoteSchemeId);
+        Assert(voteScheme != null && voteScheme.VoteMechanism == VoteMechanism.TokenBallot,
+            "Not support non-token voting.");
+
+        var transaction = new ExecuteTransaction
+        {
+            ContractMethodName = GovernanceContractConstants.TransferMethodName,
+            ToAddress = State.DaoContract.Value,
+            Params = new TransferInput
+            {
+                DaoId = input.ProposalBasicInfo.DaoId,
+                Amount = input.Amount,
+                Symbol = input.Symbol,
+                Recipient = input.Recipient,
+                Memo = "transfer treasury funds",
+                ProposalId = proposalId
+            }.ToByteString()
+        };
+        var proposal = ValidateAndGetProposalInfo(proposalId, input.ProposalBasicInfo, ProposalType.Governance, transaction);
         State.Proposals[proposalId] = proposal;
         State.ProposalGovernanceSchemeSnapShot[proposalId] = scheme.SchemeThreshold;
         RegisterVotingItem(proposal, input.ProposalBasicInfo.VoteSchemeId, scheme.GovernanceToken);

@@ -47,6 +47,8 @@ service GovernanceContract {
   }
   rpc CreateVetoProposal (CreateVetoProposalInput) returns (aelf.Hash){
   }
+  rpc CreateTransferProposal (CreateTransferProposalInput) returns (aelf.Hash){
+  }
   rpc VetoProposal (VetoProposalInput) returns (google.protobuf.Empty){
   }
   rpc ExecuteProposal (aelf.Hash) returns (google.protobuf.Empty) {
@@ -215,6 +217,14 @@ message CreateProposalInput {
 message CreateVetoProposalInput {
   ProposalBasicInfo proposal_basic_info = 1;
   aelf.Hash veto_proposal_id = 2;
+}
+
+message CreateTransferProposalInput {
+  ProposalBasicInfo proposal_basic_info = 1;
+  string symbol = 2;
+  int64 amount = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
 }
 
 message SetProposalTimePeriodInput {

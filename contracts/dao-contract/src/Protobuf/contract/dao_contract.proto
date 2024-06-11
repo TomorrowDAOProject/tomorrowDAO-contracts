@@ -48,6 +48,18 @@ service DAOContract {
   rpc RemoveGovernanceScheme (RemoveGovernanceSchemeInput) returns (google.protobuf.Empty){}
   rpc SetGovernanceToken (SetGovernanceTokenInput) returns (google.protobuf.Empty){}
   rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {}
+  
+  //Treasury
+  rpc CreateTreasury (CreateTreasuryInput) returns (google.protobuf.Empty) {}
+  rpc Deposit (DepositInput) returns (google.protobuf.Empty) {}
+  rpc Transfer (TransferInput) returns (google.protobuf.Empty) {}
+  rpc GetFundInfo (GetFundInfoInput) returns (FundInfo) {
+    option (aelf.is_view) = true;
+  }
+  rpc GetTotalFundInfo (GetTotalFundInfoInput) returns (FundInfo) {
+    option (aelf.is_view) = true;
+  }
+  
 }
 
 message InitializeInput {
@@ -63,7 +75,7 @@ message CreateDAOInput {
   string governance_token = 2;  // can be empty
   GovernanceSchemeThreshold governance_scheme_threshold = 3;  // governance scheme threshold for referendum
   HighCouncilInput high_council_input = 4;
-  bool is_treasury_contract_needed = 5;  // if true, create treasury
+  bool is_treasury_needed = 5;  // if true, create treasury
   repeated File files = 6;
   bool is_network_dao = 7;
 }
@@ -134,6 +146,14 @@ message DAOInfo {
   string governance_token = 4;
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
+  aelf.Address treasury_address = 7;
+  repeated string symbols = 9;
+}
+
+message FundInfo {
+  string symbol = 1;
+  int64 amount = 2;
+  aelf.Address treasury_address = 3;
 }
 
 message ContractAddressList {
@@ -215,6 +235,34 @@ message DaoProposalTimePeriod {
   int64 veto_execute_time_period = 5; //day
 }
 
+message CreateTreasuryInput {
+  aelf.Hash dao_id = 1;
+}
+
+message DepositInput {
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+}
+
+message TransferInput {
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
+  aelf.Hash proposal_id = 6;
+}
+
+message GetFundInfoInput {
+  aelf.Hash dao_id = 1;
+  string symbol = 2;
+}
+
+message GetTotalFundInfoInput {
+  string symbol = 1;
+}
+
 // log event
 message DAOCreated {
   option (aelf.is_event) = true;
@@ -224,6 +272,7 @@ message DAOCreated {
   aelf.Address creator = 4;
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
+  aelf.Address treasury_address = 7;
 }
 
 message SubsistStatusSet {
@@ -260,4 +309,32 @@ message MetadataUpdated {
   option (aelf.is_event) = true;
   aelf.Hash dao_id = 1;
   Metadata metadata = 2;
+}
+
+message TreasuryCreated {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_account_address = 2;
+}
+
+message DepositReceived {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_address = 2;
+  int64 amount = 3;
+  string symbol = 4;
+  aelf.Address donor = 5;
+  google.protobuf.Timestamp donation_time = 6;
+}
+
+message TreasuryTransferred {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_address = 2;
+  int64 amount = 3;
+  string symbol = 4;
+  aelf.Address recipient = 5;
+  string memo = 6;
+  aelf.Address executor = 7;
+  aelf.Hash proposal_id = 8;
 }

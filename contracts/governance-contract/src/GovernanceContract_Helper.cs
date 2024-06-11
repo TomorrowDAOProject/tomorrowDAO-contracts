@@ -106,6 +106,39 @@ public partial class GovernanceContract
         return daoInfo;
     }
 
+    private void AssertDaoSubsists(Hash daoId)
+    {
+        Assert(daoId != null && daoId != Hash.Empty, "Invalid DaoId.");
+        var boolValue = State.DaoContract.GetSubsistStatus.Call(daoId);
+        Assert(boolValue.Value, "DAO does not exist or is not in subsistence.");
+    }
+
+    private DAOInfo AssertDaoSubsistAndTreasuryStatus(Hash daoId)
+    {
+        Assert(daoId != null && daoId != Hash.Empty, "Invalid DaoId.");
+        var daoInfo = State.DaoContract.GetDAOInfo.Call(daoId);
+        Assert(daoInfo != null, $"Dao {daoId} not exist.");
+        Assert(daoInfo!.SubsistStatus, "DAO is not in subsistence.");
+        Assert(daoInfo.TreasuryAddress != null && daoInfo.TreasuryAddress.Value.Any(),
+            "Treasury has not bean created yet.");
+        return daoInfo;
+    }
+
+    private void AssertDaoSubsistAndTreasuryStatus(Hash daoId, string symbol, long amount, Address recipient)
+    {
+        Assert(!string.IsNullOrWhiteSpace(symbol), "Invalid symbol.");
+        Assert(recipient != null && recipient.Value.Any(), "Invalid symbol.");
+        Assert(amount > 0, "Amount must be greater than 0.");
+        AssertDaoSubsistAndTreasuryStatus(daoId);
+        
+        var fundInfo = State.DaoContract.GetFundInfo.Call(new GetFundInfoInput
+        {
+            DaoId = daoId,
+            Symbol = symbol
+        });
+        Assert(fundInfo!= null && fundInfo.Amount >= amount, "The Treasury has insufficient available funds.");
+    } 
+
     private int CallAndCheckHighCouncilCount(Hash daoId)
     {
         var addressList = State.ElectionContract.GetVictories.Call(daoId);

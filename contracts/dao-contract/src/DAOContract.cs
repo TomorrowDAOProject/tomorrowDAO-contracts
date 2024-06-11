@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Linq;
 using AElf;
-using AElf.Contracts.MultiToken;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
@@ -37,10 +35,10 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
         State.ElectionContract.Value = input.ElectionContractAddress;
 
         // todo do not have TimelockContract and TreasuryContract this version, so remove check and assignment temporarily
-        
+
         // Assert(IsAddressValid(input.TimelockContractAddress), "Invalid timelock contract address.");
         // State.TimelockContract.Value = input.TimelockContractAddress;
-        
+
         // Assert(IsAddressValid(input.TreasuryContractAddress), "Invalid treasury contract address.");
         // State.TreasuryContract.Value = input.TreasuryContractAddress;
 
@@ -57,13 +55,26 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
 
         Assert(State.DAOInfoMap[daoId] == null, "DAO already exists.");
 
-        ProcessDAOBaseInfo(daoId, input);
-        ProcessDAOComponents(daoId, input);
+        ProcessDaoBaseInfo(daoId, input);
+        ProcessDaoComponents(daoId, input);
+
+
+        var daoInfo = State.DAOInfoMap[daoId];
+        Context.Fire(new DAOCreated
+        {
+            DaoId = daoId,
+            Metadata = input.Metadata,
+            Creator = Context.Sender,
+            GovernanceToken = input.GovernanceToken,
+            ContractAddressList = daoInfo.ContractAddressList,
+            IsNetworkDao = input.IsNetworkDao,
+            TreasuryAddress = daoInfo.TreasuryAddress
+        });
 
         return new Empty();
     }
 
-    private void ProcessDAOBaseInfo(Hash daoId, CreateDAOInput input)
+    private void ProcessDaoBaseInfo(Hash daoId, CreateDAOInput input)
     {
         var daoInfo = new DAOInfo
         {
@@ -85,16 +96,6 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
 
         ProcessMetadata(daoId, input.Metadata);
         ProcessGovernanceToken(daoId, input.GovernanceToken);
-
-        Context.Fire(new DAOCreated
-        {
-            DaoId = daoId,
-            Metadata = input.Metadata,
-            Creator = Context.Sender,
-            GovernanceToken = input.GovernanceToken,
-            ContractAddressList = daoInfo.ContractAddressList,
-            IsNetworkDao = input.IsNetworkDao
-        });
     }
 
     private void ProcessGovernanceToken(Hash daoId, string governanceToken)
@@ -105,21 +106,31 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
         State.DAOInfoMap[daoId].GovernanceToken = governanceToken;
     }
 
-    private void ProcessDAOComponents(Hash daoId, CreateDAOInput input)
+    private void ProcessDaoComponents(Hash daoId, CreateDAOInput input)
     {
         ProcessReferendumGovernanceMechanism(daoId, input.GovernanceSchemeThreshold);
         ProcessHighCouncil(daoId, input.HighCouncilInput);
-        ProcessTreasuryContract(daoId, input.IsTreasuryContractNeeded);
+        ProcessTreasury(daoId, input.IsTreasuryNeeded);
         ProcessFileUploads(daoId, input.Files);
         ProcessDefaultPermissions(daoId, new List<string>
-            { DAOContractConstants.UploadFileInfos, DAOContractConstants.RemoveFileInfos, DAOContractConstants.UpdateMetadata });
+        {
+            DAOContractConstants.UploadFileInfos, DAOContractConstants.RemoveFileInfos,
+            DAOContractConstants.UpdateMetadata
+        });
     }
 
-    private void ProcessTreasuryContract(Hash daoId, bool isTreasuryNeeded)
+    private void ProcessTreasury(Hash daoId, bool isTreasuryNeeded)
     {
         if (!isTreasuryNeeded) return;
 
-        // TODO
+        var treasuryAddress = GenerateTreasuryAddressFromDaoId(daoId);
+        var belongingDaoId = State.TreasuryAccountMap[treasuryAddress];
+        Assert(belongingDaoId == null || belongingDaoId == Hash.Empty, "Treasury address already exists.");
+        State.TreasuryAccountMap[treasuryAddress] = daoId;
+
+        var daoInfo = State.DAOInfoMap[daoId];
+        daoInfo.TreasuryAddress = treasuryAddress;
+        State.DAOInfoMap[daoId] = daoInfo;
     }
 
     public override Empty SetSubsistStatus(SetSubsistStatusInput input)

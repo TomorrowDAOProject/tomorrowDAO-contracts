@@ -25,4 +25,7 @@ public static class DAOContractConstants
     public const string UploadFileInfos = "uploadfileinfos";
     public const string RemoveFileInfos = "removefileinfos";
     public const string UpdateMetadata = "updatemetadata";
+    
+    //treasury
+    public const int MaxSupportedTokenTypes = 50;
 }

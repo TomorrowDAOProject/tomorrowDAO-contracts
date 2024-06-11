@@ -48,11 +48,12 @@ public partial class DAOContract
     {
         return character >= 'A' && character <= 'Z';
     }
-    
+
     private TokenInfo AssertToken(string token)
     {
         Assert(!string.IsNullOrEmpty(token), "Token is null.");
-        Assert(token!.Length <= DAOContractConstants.SymbolMaxLength && token.All(IsValidTokenChar), "Invalid token symbol.");
+        Assert(token!.Length <= DAOContractConstants.SymbolMaxLength && token.All(IsValidTokenChar),
+            "Invalid token symbol.");
         var tokenInfo = State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput
         {
             Symbol = token
@@ -73,7 +74,7 @@ public partial class DAOContract
             ProposalThreshold = input.ProposalThreshold
         };
     }
-    
+
     private Governance.DaoProposalTimePeriod ConvertToProposalTimePeriod(DaoProposalTimePeriod input)
     {
         return new Governance.DaoProposalTimePeriod
@@ -84,5 +85,21 @@ public partial class DAOContract
             ExecuteTimePeriod = input.ExecuteTimePeriod,
             VetoExecuteTimePeriod = input.VetoExecuteTimePeriod,
         };
+    }
+
+    private static Hash GenerateTreasuryHash(Hash daoId, Address contractAddress)
+    {
+        return HashHelper.ConcatAndCompute(daoId, HashHelper.ComputeFrom(contractAddress));
+    }
+
+    private Address GenerateTreasuryAddressFromDaoId(Hash daoId)
+    {
+        var treasuryHash = GenerateTreasuryHash(daoId, Context.Self);
+        return Context.ConvertVirtualAddressToContractAddress(treasuryHash);
+    }
+
+    private Address GenerateTreasuryAddress(Hash treasuryHash)
+    {
+        return Context.ConvertVirtualAddressToContractAddress(treasuryHash);
     }
 }

@@ -82,4 +82,25 @@ public partial class DAOContract
     {
         return State.ReferendumAddressMap[input];
     }
+    
+    public override FundInfo GetFundInfo(GetFundInfoInput input)
+    {
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        if (daoInfo == null)
+        {
+            return new FundInfo();
+        }
+
+        var fundInfo = State.FundInfoMap[daoInfo.TreasuryAddress][input.Symbol] ?? new FundInfo();
+        fundInfo.Symbol = input.Symbol;
+        fundInfo.TreasuryAddress = daoInfo.TreasuryAddress;
+        return fundInfo;
+    }
+
+    public override FundInfo GetTotalFundInfo(GetTotalFundInfoInput input)
+    {
+        var totalFundInfo = State.TotalFundInfoMap[input.Symbol] ?? new FundInfo();
+        totalFundInfo.Symbol = input.Symbol;
+        return totalFundInfo;
+    }
 }

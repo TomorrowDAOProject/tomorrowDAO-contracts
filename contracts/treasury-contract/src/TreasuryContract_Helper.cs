@@ -25,7 +25,7 @@ public partial class TreasuryContract
     private DAOInfo AssertSenderIsDaoContractOrDaoAdmin(Hash daoId)
     {
         var daoInfo = State.DaoContract.GetDAOInfo.Call(daoId);
-        Assert(daoId != null, $"Dao {daoId} not exist.");
+        Assert(daoInfo != null, $"Dao {daoId} not exist.");
         Assert(State.DaoContract.Value == Context.Sender || daoInfo.Creator == Context.Sender, "No permission.");
         return daoInfo;
     }
