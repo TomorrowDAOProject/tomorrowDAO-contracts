@@ -38,6 +38,20 @@ service DAOContract {
 
   // permission
   rpc HasPermission (HasPermissionInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc AddCreatorPermissions (AddCreatorPermissionsInput) returns (google.protobuf.Empty) {}
+
+  // metadata
+  rpc UpdateMetadata (UpdateMetadataInput) returns (google.protobuf.Empty) {}
+
+  // governance
+  rpc UpdateGovernanceSchemeThreshold (UpdateGovernanceSchemeThresholdInput) returns (google.protobuf.Empty){}
+  rpc RemoveGovernanceScheme (RemoveGovernanceSchemeInput) returns (google.protobuf.Empty){}
+  rpc SetGovernanceToken (SetGovernanceTokenInput) returns (google.protobuf.Empty){}
+  rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {}
+
+  //Treasury 
+  rpc SetTreasuryContractAddress (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc GetTreasuryAddress(aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {
@@ -53,7 +67,7 @@ message CreateDAOInput {
   string governance_token = 2;  // can be empty
   GovernanceSchemeThreshold governance_scheme_threshold = 3;  // governance scheme threshold for referendum
   HighCouncilInput high_council_input = 4;
-  bool is_treasury_contract_needed = 5;  // if true, create treasury
+  bool is_treasury_needed = 5;  // if true, create treasury
   repeated File files = 6;
   bool is_network_dao = 7;
 }
@@ -80,6 +94,7 @@ message GovernanceSchemeThreshold {// copy from governance contract
   int64 minimal_approve_threshold = 3;     // percentage
   int64 maximal_rejection_threshold = 4;   // percentage
   int64 maximal_abstention_threshold = 5;  // percentage
+  int64 proposal_threshold = 6;
 }
 
 message HighCouncilConfig {
@@ -143,6 +158,11 @@ message EnableHighCouncilInput {
   HighCouncilInput high_council_input = 2;
 }
 
+message UpdateHighCouncilConfigInput {
+  aelf.Hash dao_id = 1;
+  HighCouncilConfig high_council_config = 2;
+}
+
 message UploadFileInfosInput {
   aelf.Hash dao_id = 1;
   repeated File files = 2;
@@ -160,6 +180,45 @@ message HasPermissionInput {
   string what = 4;         // target function name
 }
 
+message AddCreatorPermissionsInput {
+  aelf.Hash dao_id = 1;
+  repeated string method_names = 2;
+}
+
+message UpdateMetadataInput {
+  aelf.Hash dao_id = 1;
+  Metadata metadata = 2;
+}
+
+message UpdateGovernanceSchemeThresholdInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address scheme_address = 2;
+  GovernanceSchemeThreshold scheme_threshold = 3;
+}
+
+message RemoveGovernanceSchemeInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address scheme_address = 2;
+}
+
+message SetGovernanceTokenInput {
+  aelf.Hash dao_id = 1;
+  string governance_token = 2;
+}
+
+message SetProposalTimePeriodInput {
+  aelf.Hash dao_id = 1;
+  DaoProposalTimePeriod proposal_time_period = 2;
+}
+
+message DaoProposalTimePeriod {
+  int64 active_time_period = 1; //day
+  int64 veto_active_time_period = 2; //day
+  int64 pending_time_period = 3; //day
+  int64 execute_time_period = 4; //day
+  int64 veto_execute_time_period = 5; //day
+}
+
 // log event
 message DAOCreated {
   option (aelf.is_event) = true;
@@ -168,6 +227,8 @@ message DAOCreated {
   aelf.Hash dao_id = 3;
   aelf.Address creator = 4;
   ContractAddressList contract_address_list = 5;
+  bool is_network_dao = 6;
+  aelf.Address treasury_address = 7;
 }
 
 message SubsistStatusSet {
@@ -198,4 +259,10 @@ message FileInfosRemoved {
   option (aelf.is_event) = true;
   aelf.Hash dao_id = 1;
   FileInfoList removed_files = 2;
+}
+
+message MetadataUpdated {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  Metadata metadata = 2;
 }

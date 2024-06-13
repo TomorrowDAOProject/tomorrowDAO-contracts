@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TomorrowDAO.Contracts.DAO;
 using TomorrowDAO.Contracts.Election;
 using TomorrowDAO.Contracts.Governance;
+using TomorrowDAO.Contracts.Treasury;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
 
@@ -44,6 +45,10 @@ namespace TomorrowDAO.Contracts.Vote
         internal GovernanceContractContainer.GovernanceContractStub GovernanceContractStub;
         internal Address DAOContractAddress { get; set; }
         internal DAOContractContainer.DAOContractStub DAOContractStub;
+        
+        internal Address TreasuryContractAddress { get; set; }
+        internal TreasuryContractContainer.TreasuryContractStub TreasuryContractStub;
+        
         internal Address ElectionContractAddress { get; set; }
         internal ElectionContractContainer.ElectionContractStub ElectionContractStub;
         internal TokenContractContainer.TokenContractStub TokenContractStub;
@@ -60,6 +65,7 @@ namespace TomorrowDAO.Contracts.Vote
             DeployDaoContract();
             DeployElectionContract();
             SetTokenContract();
+            DeployTreasuryContract();
         }
 
         private T GetContractStub<T>(Address contractAddress, ECKeyPair senderKeyPair) where T : ContractStubBase, new()
@@ -156,6 +162,33 @@ namespace TomorrowDAO.Contracts.Vote
         private void SetTokenContract()
         {
             TokenContractStub = GetContractStub<TokenContractContainer.TokenContractStub>(TokenContractAddress, DefaultKeyPair);
+        }
+        
+        private void DeployTreasuryContract()
+        {
+            var code = System.IO.File.ReadAllBytes(typeof(TreasuryContract).Assembly.Location);
+            var contractOperation = new ContractOperation
+            {
+                ChainId = 9992731,
+                CodeHash = HashHelper.ComputeFrom(code),
+                Deployer = DefaultAddress,
+                Salt = HashHelper.ComputeFrom("treasury"),
+                Version = 1
+            };
+            contractOperation.Signature = GenerateContractSignature(DefaultKeyPair.PrivateKey, contractOperation);
+
+            var result = AsyncHelper.RunSync(async () => await GenesisContractStub.DeploySmartContract.SendAsync(
+                new ContractDeploymentInput
+                {
+                    Category = KernelConstants.CodeCoverageRunnerCategory,
+                    Code = ByteString.CopyFrom(code),
+                    ContractOperation = contractOperation
+                }));
+
+            TreasuryContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+            TreasuryContractStub =
+                GetContractStub<TreasuryContractContainer.TreasuryContractStub>(TreasuryContractAddress,
+                    DefaultKeyPair);
         }
     }
 }

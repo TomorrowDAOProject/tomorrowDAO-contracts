@@ -79,6 +79,7 @@ public class GovernanceContractTestBase : TestBase
             TimelockContractAddress = DefaultAddress,
             TreasuryContractAddress = DefaultAddress
         });
+        await DAOContractStub.SetTreasuryContractAddress.SendAsync(TreasuryContractAddress);
 
         //init election contract
         await ElectionContractStub.Initialize.SendAsync(new Election.InitializeInput
@@ -145,7 +146,7 @@ public class GovernanceContractTestBase : TestBase
                     MaximalAbstentionThreshold = 2000
                 }
             },
-            IsTreasuryContractNeeded = false,
+            IsTreasuryNeeded = false,
             IsNetworkDao = isNetworkDao
         });
 
