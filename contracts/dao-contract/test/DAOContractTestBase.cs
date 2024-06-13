@@ -81,7 +81,7 @@ public class DAOContractTestBase : TestBase
 
     public async Task<IExecutionResult<Empty>> InitializeDAO()
     {
-        return await DAOContractStub.Initialize.SendAsync(new DAO.InitializeInput
+        var result = await DAOContractStub.Initialize.SendAsync(new DAO.InitializeInput
         {
             GovernanceContractAddress = GovernanceContractAddress,
             VoteContractAddress = VoteContractAddress,
@@ -89,6 +89,8 @@ public class DAOContractTestBase : TestBase
             TimelockContractAddress = DefaultAddress,
             TreasuryContractAddress = DefaultAddress
         });
+        await DAOContractStub.SetTreasuryContractAddress.SendAsync(TreasuryContractAddress);
+        return result;
     }
 
     public async Task<IExecutionResult<Empty>> InitializeGovernance()
@@ -338,7 +340,7 @@ public class DAOContractTestBase : TestBase
                     MaximalAbstentionThreshold = 2000
                 }
             },
-            IsTreasuryContractNeeded = false,
+            IsTreasuryNeeded = false,
             IsNetworkDao = isNetworkDao
         };
     }

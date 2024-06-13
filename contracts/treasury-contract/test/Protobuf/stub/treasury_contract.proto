@@ -4,27 +4,74 @@ import "aelf/core.proto";
 import "aelf/options.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "Protobuf/base/acs12.proto";
+
 // The namespace of this class
 option csharp_namespace = "TomorrowDAO.Contracts.Treasury";
 
 service TreasuryContract {
   // The name of the state class the smart contract is going to use to access blockchain state
   option (aelf.csharp_state) = "TomorrowDAO.Contracts.Treasury.TreasuryContractState";
+  option (aelf.base) = "Protobuf/base/acs12.proto";
 
-  // Actions (methods that modify contract state)
-  // Stores the value in contract state
-  rpc Update (google.protobuf.StringValue) returns (google.protobuf.Empty) {
+  rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
+
+  rpc CreateTreasury (CreateTreasuryInput) returns (google.protobuf.Empty) {}
+
+  rpc Transfer (TransferInput) returns (google.protobuf.Empty) {}
+  
+  // DAO id
+  rpc GetTreasuryAccountAddress (aelf.Hash) returns (aelf.Address) {
+    option (aelf.is_view) = true;
   }
 
-  // Views (methods that don't modify contract state)
-  // Get the value stored from contract state
-  rpc Read (google.protobuf.Empty) returns (google.protobuf.StringValue) {
+  rpc GetTreasuryInfo(aelf.Hash) returns (TreasuryInfo) {
+    option (aelf.is_view) = true;
+  }
+
+  // treasury_account_address
+  rpc GetDAOIdByTreasuryAccountAddress (aelf.Address) returns (aelf.Hash) {
     option (aelf.is_view) = true;
   }
 }
 
-// An event that will be emitted from contract method call
-message UpdatedMessage {
+message InitializeInput {
+  aelf.Address dao_contract_address = 1;
+  aelf.Address governance_contract_address = 2;
+}
+
+message CreateTreasuryInput {
+  aelf.Hash dao_id = 1;
+}
+
+message TreasuryInfo {
+  aelf.Address treasury_address = 1;
+}
+
+message TransferInput {
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
+  aelf.Hash proposal_id = 6;
+}
+
+message TreasuryCreated {
   option (aelf.is_event) = true;
-  string value = 1;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_account_address = 2;
+}
+
+message TreasuryTransferred {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_address = 2;
+  int64 amount = 3;
+  string symbol = 4;
+  aelf.Address recipient = 5;
+  string memo = 6;
+  aelf.Address executor = 7;
+  aelf.Hash proposal_id = 8;
 }

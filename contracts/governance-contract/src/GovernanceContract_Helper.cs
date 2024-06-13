@@ -110,6 +110,34 @@ public partial class GovernanceContract
         return daoInfo;
     }
 
+    private DAOInfo AssertDaoSubsistAndTreasuryStatus(Hash daoId, out Address treasuryAddress)
+    {
+        Assert(daoId != null && daoId != Hash.Empty, "Invalid DaoId.");
+        var daoInfo = State.DaoContract.GetDAOInfo.Call(daoId);
+        Assert(daoInfo != null, $"Dao {daoId} not exist.");
+        Assert(daoInfo!.SubsistStatus, "DAO is not in subsistence.");
+        treasuryAddress = State.DaoContract.GetTreasuryAddress.Call(daoId);
+        Assert(treasuryAddress != null && treasuryAddress.Value.Any(),
+            "Treasury has not bean created yet.");
+        return daoInfo;
+    }
+
+    private DAOInfo AssertDaoSubsistAndTreasuryStatus(Hash daoId, string symbol, long amount, Address recipient)
+    {
+        Assert(!string.IsNullOrWhiteSpace(symbol), "Invalid symbol.");
+        Assert(recipient != null && recipient.Value.Any(), "Invalid recipient.");
+        Assert(amount > 0, "Amount must be greater than 0.");
+        var daoInfo = AssertDaoSubsistAndTreasuryStatus(daoId, out var treasuryAddress);
+
+        var getBalanceOutput = State.TokenContract.GetBalance.Call(new GetBalanceInput
+        {
+            Symbol = symbol,
+            Owner = treasuryAddress
+        });
+        Assert(getBalanceOutput != null && getBalanceOutput.Balance >= amount, "The Treasury has insufficient available funds.");
+        return daoInfo;
+    } 
+
     private int CallAndCheckHighCouncilCount(Hash daoId)
     {
         var addressList = State.ElectionContract.GetVictories.Call(daoId);

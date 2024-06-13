@@ -1,3 +1,4 @@
+using System.Linq;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
 
@@ -7,7 +8,16 @@ public partial class DAOContract
 {
     public override DAOInfo GetDAOInfo(Hash input)
     {
-        return State.DAOInfoMap[input];
+        var daoInfo = State.DAOInfoMap[input];
+        if (daoInfo != null && daoInfo.ContractAddressList != null)
+        {
+            var treasuryContractAddress = daoInfo.ContractAddressList.TreasuryContractAddress;
+            if (treasuryContractAddress == null || !treasuryContractAddress.Value.Any())
+            {
+                daoInfo.ContractAddressList.TreasuryContractAddress = State.TreasuryContract.Value;
+            }
+        }
+        return daoInfo;
     }
 
     public override ContractAddressList GetInitializedContracts(Empty input)
@@ -37,6 +47,14 @@ public partial class DAOContract
 
     public override BoolValue GetSubsistStatus(Hash input)
     {
+        if (State.DAOInfoMap[input] == null)
+        {
+            return new BoolValue
+            {
+                Value = false
+            };
+        }
+
         return new BoolValue
         {
             Value = State.DAOInfoMap[input].SubsistStatus
@@ -74,5 +92,10 @@ public partial class DAOContract
     public override Address GetReferendumAddress(Hash input)
     {
         return State.ReferendumAddressMap[input];
+    }
+
+    public override Address GetTreasuryAddress(Hash input)
+    {
+        return State.TreasuryContract.GetTreasuryAccountAddress.Call(input);
     }
 }

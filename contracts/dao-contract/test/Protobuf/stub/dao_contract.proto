@@ -39,15 +39,19 @@ service DAOContract {
   // permission
   rpc HasPermission (HasPermissionInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
   rpc AddCreatorPermissions (AddCreatorPermissionsInput) returns (google.protobuf.Empty) {}
-  
+
   // metadata
   rpc UpdateMetadata (UpdateMetadataInput) returns (google.protobuf.Empty) {}
-  
+
   // governance
   rpc UpdateGovernanceSchemeThreshold (UpdateGovernanceSchemeThresholdInput) returns (google.protobuf.Empty){}
   rpc RemoveGovernanceScheme (RemoveGovernanceSchemeInput) returns (google.protobuf.Empty){}
   rpc SetGovernanceToken (SetGovernanceTokenInput) returns (google.protobuf.Empty){}
   rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {}
+
+  //Treasury 
+  rpc SetTreasuryContractAddress (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc GetTreasuryAddress(aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {
@@ -63,7 +67,7 @@ message CreateDAOInput {
   string governance_token = 2;  // can be empty
   GovernanceSchemeThreshold governance_scheme_threshold = 3;  // governance scheme threshold for referendum
   HighCouncilInput high_council_input = 4;
-  bool is_treasury_contract_needed = 5;  // if true, create treasury
+  bool is_treasury_needed = 5;  // if true, create treasury
   repeated File files = 6;
   bool is_network_dao = 7;
 }
@@ -224,6 +228,7 @@ message DAOCreated {
   aelf.Address creator = 4;
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
+  aelf.Address treasury_address = 7;
 }
 
 message SubsistStatusSet {

@@ -41,6 +41,8 @@ public partial class DAOContractTests
             VoteContractAddress = VoteContractAddress,
             TimelockContractAddress = DefaultAddress
         });
+        
+        await DAOContractStub.SetTreasuryContractAddress.SendAsync(TreasuryContractAddress);
 
         result.TransactionResult.Status.ShouldBe(TransactionResultStatus.Mined);
 

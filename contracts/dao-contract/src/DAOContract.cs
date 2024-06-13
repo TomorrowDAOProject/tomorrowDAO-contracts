@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using AElf;
-using AElf.Contracts.MultiToken;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
+using TomorrowDAO.Contracts.Treasury;
 
 namespace TomorrowDAO.Contracts.DAO;
 
@@ -40,9 +39,6 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
         
         // Assert(IsAddressValid(input.TimelockContractAddress), "Invalid timelock contract address.");
         // State.TimelockContract.Value = input.TimelockContractAddress;
-        
-        // Assert(IsAddressValid(input.TreasuryContractAddress), "Invalid treasury contract address.");
-        // State.TreasuryContract.Value = input.TreasuryContractAddress;
 
         Assert(IsAddressValid(input.VoteContractAddress), "Invalid vote contract address.");
         State.VoteContract.Value = input.VoteContractAddress;
@@ -59,6 +55,19 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
 
         ProcessDAOBaseInfo(daoId, input);
         ProcessDAOComponents(daoId, input);
+
+        var daoInfo = State.DAOInfoMap[daoId];
+        var treasuryAddress = State.TreasuryContract?.GetTreasuryAccountAddress?.Call(daoId);
+        Context.Fire(new DAOCreated
+        {
+            DaoId = daoId,
+            Metadata = input.Metadata,
+            Creator = Context.Sender,
+            GovernanceToken = input.GovernanceToken,
+            ContractAddressList = daoInfo.ContractAddressList,
+            IsNetworkDao = input.IsNetworkDao,
+            TreasuryAddress = treasuryAddress
+        });
 
         return new Empty();
     }
@@ -85,16 +94,6 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
 
         ProcessMetadata(daoId, input.Metadata);
         ProcessGovernanceToken(daoId, input.GovernanceToken);
-
-        Context.Fire(new DAOCreated
-        {
-            DaoId = daoId,
-            Metadata = input.Metadata,
-            Creator = Context.Sender,
-            GovernanceToken = input.GovernanceToken,
-            ContractAddressList = daoInfo.ContractAddressList,
-            IsNetworkDao = input.IsNetworkDao
-        });
     }
 
     private void ProcessGovernanceToken(Hash daoId, string governanceToken)
@@ -109,7 +108,7 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
     {
         ProcessReferendumGovernanceMechanism(daoId, input.GovernanceSchemeThreshold);
         ProcessHighCouncil(daoId, input.HighCouncilInput);
-        ProcessTreasuryContract(daoId, input.IsTreasuryContractNeeded);
+        ProcessTreasuryContract(daoId, input.IsTreasuryNeeded);
         ProcessFileUploads(daoId, input.Files);
         ProcessDefaultPermissions(daoId, new List<string>
             { DAOContractConstants.UploadFileInfos, DAOContractConstants.RemoveFileInfos, DAOContractConstants.UpdateMetadata });
@@ -118,8 +117,11 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
     private void ProcessTreasuryContract(Hash daoId, bool isTreasuryNeeded)
     {
         if (!isTreasuryNeeded) return;
-
-        // TODO
+        
+        State.TreasuryContract.CreateTreasury.Send(new CreateTreasuryInput
+        {
+            DaoId = daoId
+        });
     }
 
     public override Empty SetSubsistStatus(SetSubsistStatusInput input)
@@ -138,6 +140,21 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
             DaoId = input.DaoId,
             Status = input.Status
         });
+
+        return new Empty();
+    }
+    
+    public override Empty SetTreasuryContractAddress(Address input)
+    {
+        Assert(IsAddressValid(input), "Invalid treasury contract address.");
+        State.GenesisContract.Value = Context.GetZeroSmartContractAddress();
+        Assert(State.GenesisContract.GetContractInfo.Call(Context.Self).Deployer == Context.Sender,
+            "No permission.");
+        
+        if (State.TreasuryContract.Value == null)
+        {
+            State.TreasuryContract.Value = input;
+        }
 
         return new Empty();
     }

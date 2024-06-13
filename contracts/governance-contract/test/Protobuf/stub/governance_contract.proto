@@ -17,6 +17,8 @@ service GovernanceContract {
 
   rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {
   }
+  rpc SetTokenContract (google.protobuf.Empty) returns (google.protobuf.Empty) {
+  }
 
   // Governance scheme
   rpc AddGovernanceScheme (AddGovernanceSchemeInput) returns (aelf.Address){
@@ -44,6 +46,8 @@ service GovernanceContract {
   rpc CreateProposal (CreateProposalInput) returns (aelf.Hash){
   }
   rpc CreateVetoProposal (CreateVetoProposalInput) returns (aelf.Hash){
+  }
+  rpc CreateTransferProposal (CreateTransferProposalInput) returns (aelf.Hash){
   }
   rpc VetoProposal (VetoProposalInput) returns (google.protobuf.Empty){
   }
@@ -92,6 +96,7 @@ message GovernanceSchemeThreshold {
   int64 minimal_approve_threshold = 3; // percentage
   int64 maximal_rejection_threshold = 4; // percentage
   int64 maximal_abstention_threshold = 5; // percentage
+  int64 proposal_threshold = 6;
 }
 message AddressList {
   repeated aelf.Address value = 1;
@@ -206,11 +211,20 @@ message CreateProposalInput {
   ProposalBasicInfo proposal_basic_info = 1;
   int32 proposal_type = 2;
   ExecuteTransaction transaction = 3;
+  aelf.Hash token = 4;
 }
 
 message CreateVetoProposalInput {
   ProposalBasicInfo proposal_basic_info = 1;
   aelf.Hash veto_proposal_id = 2;
+}
+
+message CreateTransferProposalInput {
+  ProposalBasicInfo proposal_basic_info = 1;
+  string symbol = 2;
+  int64 amount = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
 }
 
 message SetProposalTimePeriodInput {

@@ -50,6 +50,10 @@
 
     <ItemGroup>
         <ProjectReference Include="../src/TomorrowDAO.Contracts.Treasury.csproj" />
+        <ProjectReference Include="..\..\dao-contract\src\TomorrowDAO.Contracts.DAO.csproj" />
+        <ProjectReference Include="..\..\election-contract\src\TomorrowDAO.Contracts.Election.csproj" />
+        <ProjectReference Include="..\..\governance-contract\src\TomorrowDAO.Contracts.Governance.csproj" />
+        <ProjectReference Include="..\..\vote-contract\src\TomorrowDAO.Contracts.Vote.csproj" />
     </ItemGroup>
     
 </Project>

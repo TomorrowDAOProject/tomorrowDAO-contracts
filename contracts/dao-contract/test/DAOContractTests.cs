@@ -183,7 +183,7 @@ public partial class DAOContractTests : DAOContractTestBase
             log.Creator.ShouldBe(DefaultAddress);
             log.ContractAddressList.GovernanceContractAddress.ShouldBe(GovernanceContractAddress);
             log.ContractAddressList.ElectionContractAddress.ShouldBe(ElectionContractAddress);
-            log.ContractAddressList.TreasuryContractAddress.ShouldBe(null);
+            log.ContractAddressList.TreasuryContractAddress.ShouldBe(TreasuryContractAddress);
             log.ContractAddressList.VoteContractAddress.ShouldBe(VoteContractAddress);
             log.ContractAddressList.TimelockContractAddress.ShouldBe(null);
 
@@ -202,7 +202,7 @@ public partial class DAOContractTests : DAOContractTestBase
             output.SubsistStatus.ShouldBeTrue();
             output.ContractAddressList.GovernanceContractAddress.ShouldBe(GovernanceContractAddress);
             output.ContractAddressList.ElectionContractAddress.ShouldBe(ElectionContractAddress);
-            output.ContractAddressList.TreasuryContractAddress.ShouldBe(null);
+            output.ContractAddressList.TreasuryContractAddress.ShouldBe(TreasuryContractAddress);
             output.ContractAddressList.VoteContractAddress.ShouldBe(VoteContractAddress);
             output.ContractAddressList.TimelockContractAddress.ShouldBe(null);
             output.DaoId.ShouldBe(daoId);
@@ -278,7 +278,7 @@ public partial class DAOContractTests : DAOContractTestBase
             log.Creator.ShouldBe(DefaultAddress);
             log.ContractAddressList.GovernanceContractAddress.ShouldBe(GovernanceContractAddress);
             log.ContractAddressList.ElectionContractAddress.ShouldBe(ElectionContractAddress);
-            log.ContractAddressList.TreasuryContractAddress.ShouldBe(null);
+            log.ContractAddressList.TreasuryContractAddress.ShouldBe(TreasuryContractAddress);
             log.ContractAddressList.VoteContractAddress.ShouldBe(VoteContractAddress);
             log.ContractAddressList.TimelockContractAddress.ShouldBe(null);
 
@@ -290,7 +290,7 @@ public partial class DAOContractTests : DAOContractTestBase
             output.SubsistStatus.ShouldBeTrue();
             output.ContractAddressList.GovernanceContractAddress.ShouldBe(GovernanceContractAddress);
             output.ContractAddressList.ElectionContractAddress.ShouldBe(ElectionContractAddress);
-            output.ContractAddressList.TreasuryContractAddress.ShouldBe(null);
+            output.ContractAddressList.TreasuryContractAddress.ShouldBe(TreasuryContractAddress);
             output.ContractAddressList.VoteContractAddress.ShouldBe(VoteContractAddress);
             output.ContractAddressList.TimelockContractAddress.ShouldBe(null);
             output.DaoId.ShouldBe(daoId);
@@ -457,5 +457,16 @@ public partial class DAOContractTests : DAOContractTestBase
             GovernanceToken = symbol
         });
         result.TransactionResult.Error.ShouldContain(errorMessage);
+    }
+
+    [Fact]
+    public async Task CreateDAOTests_SetTreasuryContractAddress()
+    {
+        await InitializeAsync();
+        var daoId = await CreateDAOAsync(false);
+
+        var daoInfo = await DAOContractStub.GetDAOInfo.CallAsync(daoId);
+        daoInfo.ShouldNotBeNull();
+        daoInfo.ContractAddressList.TreasuryContractAddress.ShouldBe(TreasuryContractAddress);
     }
 }

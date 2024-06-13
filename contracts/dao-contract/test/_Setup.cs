@@ -12,6 +12,7 @@ using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
 using TomorrowDAO.Contracts.Election;
 using TomorrowDAO.Contracts.Governance;
+using TomorrowDAO.Contracts.Treasury;
 using TomorrowDAO.Contracts.Vote;
 using Volo.Abp.Modularity;
 using Volo.Abp.Threading;
@@ -42,6 +43,7 @@ public class TestBase : AElf.Testing.TestBase.ContractTestBase<Module>
     internal GovernanceContractContainer.GovernanceContractStub GovernanceContractStub;
     internal ElectionContractContainer.ElectionContractStub ElectionContractStub;
     internal VoteContractContainer.VoteContractStub VoteContractStub;
+    internal TreasuryContractContainer.TreasuryContractStub TreasuryContractStub;
 
     internal ECKeyPair DefaultKeyPair => Accounts[0].KeyPair;
     internal Address DefaultAddress => Accounts[0].Address;
@@ -58,6 +60,8 @@ public class TestBase : AElf.Testing.TestBase.ContractTestBase<Module>
     internal Address GovernanceContractAddress { get; set; }
     internal Address ElectionContractAddress { get; set; }
     internal Address VoteContractAddress { get; set; }
+    
+    internal Address TreasuryContractAddress { get; set; }
     
     internal IBlockTimeProvider BlockTimeProvider;
 
@@ -155,6 +159,28 @@ public class TestBase : AElf.Testing.TestBase.ContractTestBase<Module>
                 ContractOperation = contractOperation
             }));
         VoteContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
+        
+        // deploy test treasury contract
+        code = System.IO.File.ReadAllBytes(typeof(TreasuryContract).Assembly.Location);
+        contractOperation = new ContractOperation
+        {
+            ChainId = 9992731,
+            CodeHash = HashHelper.ComputeFrom(code),
+            Deployer = DefaultAddress,
+            Salt = HashHelper.ComputeFrom("treasury"),
+            Version = 1
+        };
+        contractOperation.Signature = GenerateContractSignature(DefaultKeyPair.PrivateKey, contractOperation);
+
+        result = AsyncHelper.RunSync(async () => await GenesisContractStub.DeploySmartContract.SendAsync(
+            new ContractDeploymentInput
+            {
+                Category = KernelConstants.CodeCoverageRunnerCategory,
+                Code = ByteString.CopyFrom(code),
+                ContractOperation = contractOperation
+            }));
+
+        TreasuryContractAddress = Address.Parser.ParseFrom(result.TransactionResult.ReturnValue);
 
 
         DAOContractStub = GetContractStub<DAOContractContainer.DAOContractStub>(DAOContractAddress, DefaultKeyPair);
@@ -169,6 +195,9 @@ public class TestBase : AElf.Testing.TestBase.ContractTestBase<Module>
             DefaultKeyPair);
         VoteContractStub = GetContractStub<VoteContractContainer.VoteContractStub>(
             VoteContractAddress,
+            DefaultKeyPair);
+        TreasuryContractStub = GetContractStub<TreasuryContractContainer.TreasuryContractStub>(
+            TreasuryContractAddress,
             DefaultKeyPair);
     }
 
