@@ -236,7 +236,7 @@ public partial class GovernanceContract
         AssertParams(input);
         var proposal = State.Proposals[input];
         Assert(proposal != null, "Proposal not found.");
-        //Assert(Context.Sender == proposal.Proposer, "No permission.");
+        Assert(Context.Sender == proposal.Proposer, "No permission.");
         ExecuteProposal(proposal);
 
         proposal.ProposalStatus = ProposalStatus.Executed;
