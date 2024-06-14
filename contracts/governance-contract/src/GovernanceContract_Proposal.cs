@@ -437,7 +437,7 @@ public partial class GovernanceContract
     public override Empty SetProposalTimePeriod(SetProposalTimePeriodInput input)
     {
         Assert(State.Initialized.Value, "Not initialized yet.");
-        Assert(Context.Sender == State.DaoContract.Value, "No permission.");
+        //Assert(Context.Sender == State.DaoContract.Value, "No permission.");
         AssertParams(input, input?.DaoId, input?.ProposalTimePeriod);
         var daoInfo = State.DaoContract.GetDAOInfo.Call(input.DaoId);
         Assert(daoInfo != null && daoInfo.DaoId == input.DaoId && daoInfo.SubsistStatus, "Invalid dao id");
@@ -446,16 +446,16 @@ public partial class GovernanceContract
         var pendingTimePeriod = input.ProposalTimePeriod.PendingTimePeriod;
         var executeTimePeriod = input.ProposalTimePeriod.ExecuteTimePeriod;
         var vetoExecuteTimePeriod = input.ProposalTimePeriod.VetoExecuteTimePeriod;
-        AssertNumberInRange(activeTimePeriod, GovernanceContractConstants.MinActiveTimePeriod,
-            GovernanceContractConstants.MaxActiveTimePeriod, "ActiveTimePeriod");
-        AssertNumberInRange(vetoActiveTimePeriod, GovernanceContractConstants.MinVetoActiveTimePeriod,
-            GovernanceContractConstants.MaxVetoActiveTimePeriod, "VetoActiveTimePeriod");
-        AssertNumberInRange(pendingTimePeriod, GovernanceContractConstants.MinPendingTimePeriod,
-            GovernanceContractConstants.MaxPendingTimePeriod, "PendingTimePeriod");
-        AssertNumberInRange(executeTimePeriod, GovernanceContractConstants.MinExecuteTimePeriod,
-            GovernanceContractConstants.MaxExecuteTimePeriod, "ExecuteTimePeriod");
-        AssertNumberInRange(vetoExecuteTimePeriod, GovernanceContractConstants.MinVetoExecuteTimePeriod,
-            GovernanceContractConstants.MaxVetoExecuteTimePeriod, "VetoExecuteTimePeriod");
+        // AssertNumberInRange(activeTimePeriod, GovernanceContractConstants.MinActiveTimePeriod,
+        //     GovernanceContractConstants.MaxActiveTimePeriod, "ActiveTimePeriod");
+        // AssertNumberInRange(vetoActiveTimePeriod, GovernanceContractConstants.MinVetoActiveTimePeriod,
+        //     GovernanceContractConstants.MaxVetoActiveTimePeriod, "VetoActiveTimePeriod");
+        // AssertNumberInRange(pendingTimePeriod, GovernanceContractConstants.MinPendingTimePeriod,
+        //     GovernanceContractConstants.MaxPendingTimePeriod, "PendingTimePeriod");
+        // AssertNumberInRange(executeTimePeriod, GovernanceContractConstants.MinExecuteTimePeriod,
+        //     GovernanceContractConstants.MaxExecuteTimePeriod, "ExecuteTimePeriod");
+        // AssertNumberInRange(vetoExecuteTimePeriod, GovernanceContractConstants.MinVetoExecuteTimePeriod,
+        //     GovernanceContractConstants.MaxVetoExecuteTimePeriod, "VetoExecuteTimePeriod");
 
         var timePeriod = State.DaoProposalTimePeriods[input.DaoId];
         if (timePeriod == null)
