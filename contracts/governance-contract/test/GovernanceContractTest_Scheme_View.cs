@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Shouldly;
+using TomorrowDAO.Contracts.Vote;
 using Xunit;
 
 namespace TomorrowDAO.Contracts.Governance;
@@ -38,7 +39,7 @@ public class GovernanceContractTestSchemeView : GovernanceContractTestBase
     public async Task GetProposalSnapShotSchemeTest()
     {
         var input = MockCreateProposalInput();
-        var executionResult = await CreateProposalAsync(input, false);
+        var executionResult = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         var proposalId = executionResult.Output;
 
         var threshold = await GovernanceContractStub.GetProposalSnapShotScheme.CallAsync(proposalId);
@@ -49,7 +50,7 @@ public class GovernanceContractTestSchemeView : GovernanceContractTestBase
     public async Task GetProposalStatusTest()
     {
         var input = MockCreateProposalInput();
-        var executionResult = await CreateProposalAsync(input, false);
+        var executionResult = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         var proposalId = executionResult.Output;
         
         var proposalStatusOutput = await GovernanceContractStub.GetProposalStatus.CallAsync(proposalId);

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AElf.Types;
 using Shouldly;
+using TomorrowDAO.Contracts.Vote;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -21,8 +22,18 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     public async Task CreateProposalTest()
     {
         var input = MockCreateProposalInput();
-        var result = await CreateProposalAsync(input, false);
+        var result = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
+        _testOutputHelper.WriteLine("ProposalId = {0}", result);
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_InvalidVoteSchemeId()
+    {
+        var input = MockCreateProposalInput();
+        var result = await CreateProposalAsync(input, true);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid voteSchemeId.");
         _testOutputHelper.WriteLine("ProposalId = {0}", result);
     }
 
@@ -30,7 +41,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     public async Task CreateProposalTest_EventTest()
     {
         var input = MockCreateProposalInput();
-        var executionResult = await CreateProposalAsync(input, false);
+        var executionResult = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         var logEvents = executionResult.TransactionResult.Logs;
         var existProposalCreated = false;
         foreach (var logEvent in logEvents)
@@ -65,7 +76,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     {
         var input = MockCreateProposalInput();
         input.ProposalType = (int)ProposalType.Unused;
-        var executionResult = await CreateProposalAsync(input, true);
+        var executionResult = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         executionResult.TransactionResult.Error.ShouldContain("ProposalType cannot be Unused or Veto");
 
         input.ProposalType = (int)ProposalType.Veto;
@@ -79,7 +90,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         var input = MockCreateProposalInput();
         input.ProposalType = (int)ProposalType.Governance;
         input.Transaction = null;
-        var executionResult = await CreateProposalAsync(input, true);
+        var executionResult = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         _testOutputHelper.WriteLine(executionResult.TransactionResult.Error);
         executionResult.TransactionResult.Error.ShouldContain("Invalid input or parameter does not exist");
     }

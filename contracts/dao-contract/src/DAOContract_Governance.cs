@@ -14,7 +14,7 @@ public partial class DAOContract
         State.GovernanceContract.AddGovernanceScheme.Send(new AddGovernanceSchemeInput
         {
             DaoId = daoId,
-            GovernanceMechanism = GovernanceMechanism.Referendum,
+            GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.Referendum,
             SchemeThreshold = governanceSchemeThreshold,
             GovernanceToken = State.DAOInfoMap[daoId].GovernanceToken,
         });
@@ -23,7 +23,7 @@ public partial class DAOContract
             new CalculateGovernanceSchemeAddressInput
             {
                 DaoId = daoId,
-                GovernanceMechanism = GovernanceMechanism.Referendum
+                GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.Referendum
             });
     }
 
@@ -77,7 +77,7 @@ public partial class DAOContract
     {
         Assert(input is { ProposalTimePeriod: not null }, "Invalid input.");
         CheckDAOExistsAndSubsist(input!.DaoId);
-        AssertPermission(input.DaoId, nameof(SetGovernanceToken));
+        AssertPermission(input.DaoId, nameof(SetProposalTimePeriod));
         
         State.GovernanceContract.SetProposalTimePeriod.Send(new Governance.SetProposalTimePeriodInput
         {

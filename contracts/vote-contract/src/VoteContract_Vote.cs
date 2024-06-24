@@ -80,6 +80,9 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
             {
                 AssertHighCouncil(daoInfo.DaoId, Context.Sender);
             }
+        }else if (GovernanceMechanism.Organization.ToString() == votingItem.GovernanceMechanism)
+        {
+            AssertOrganizationMember(daoInfo.DaoId, Context.Sender);
         }
 
         switch (voteScheme.VoteMechanism)
@@ -148,7 +151,7 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         State.DaoRemainAmounts[Context.Sender][input.DaoId] -= input.WithdrawAmount;
         foreach (var votingItemId in input.VotingItemIdList.Value)
         {
-            State.DaoProposalRemainAmounts[Context.Sender][GetDaoProposalId(input.DaoId, votingItemId)] = 0;
+            State.DaoProposalRemainAmounts[Context.Sender].Remove(GetDaoProposalId(input.DaoId, votingItemId));
         }
     }
 

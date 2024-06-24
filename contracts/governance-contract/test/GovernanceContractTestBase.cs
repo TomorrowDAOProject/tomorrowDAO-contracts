@@ -100,7 +100,7 @@ public class GovernanceContractTestBase : TestBase
     /// Dependent on the InitializeAllContract method.
     /// </summary>
     /// <returns>DaoId</returns>
-    internal async Task<Hash> MockDao(bool isNetworkDao = false)
+    internal async Task<Hash> MockDao(bool isNetworkDao = false, int governanceMechanism = 0)
     {
         var result = await DAOContractStub.CreateDAO.SendAsync(new CreateDAOInput
         {
@@ -111,7 +111,7 @@ public class GovernanceContractTestBase : TestBase
                 Description = "Dao Description",
                 SocialMedia =
                 {
-                    new Dictionary<string, string>()
+                    new Dictionary<string, string>
                     {
                         {
                             "aa", "bb"
@@ -120,7 +120,7 @@ public class GovernanceContractTestBase : TestBase
                 }
             },
             GovernanceToken = "ELF",
-            GovernanceSchemeThreshold = new DAO.GovernanceSchemeThreshold()
+            GovernanceSchemeThreshold = new DAO.GovernanceSchemeThreshold
             {
                 MinimalRequiredThreshold = 1,
                 MinimalVoteThreshold = 100000000,
@@ -147,7 +147,8 @@ public class GovernanceContractTestBase : TestBase
                 }
             },
             IsTreasuryNeeded = false,
-            IsNetworkDao = isNetworkDao
+            IsNetworkDao = isNetworkDao,
+            GovernanceMechanism = governanceMechanism
         });
 
         var log = GetLogEvent<DAOCreated>(result.TransactionResult);
@@ -164,12 +165,13 @@ public class GovernanceContractTestBase : TestBase
     /// <param name="input"></param>
     /// <param name="withException"></param>
     /// <param name="voteMechanism"></param>
+    /// <param name="governanceMechanism"></param>
     /// <returns></returns>
     internal async Task<IExecutionResult<Hash>> CreateProposalAsync(CreateProposalInput input, bool withException,
-        VoteMechanism voteMechanism = VoteMechanism.UniqueVote)
+        VoteMechanism voteMechanism = VoteMechanism.UniqueVote, int governanceMechanism = 0)
     {
         await InitializeAllContract();
-        var daoId = await MockDao();
+        var daoId = await MockDao(false, governanceMechanism);
         var addressList = await GovernanceContractStub.GetDaoGovernanceSchemeAddressList.CallAsync(daoId);
         addressList.ShouldNotBeNull();
         addressList.Value.Count.ShouldBe(2);

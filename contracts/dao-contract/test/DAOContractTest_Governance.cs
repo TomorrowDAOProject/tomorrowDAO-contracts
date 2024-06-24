@@ -9,13 +9,13 @@ using Xunit;
 
 namespace TomorrowDAO.Contracts.DAO;
 
-public partial class DAOContractTests : DAOContractTestBase
+public partial class DAOContractTests
 {
     [Fact]
     public async Task UpdateGovernanceSchemeThresholdTest()
     {
         await InitializeAll();
-        GovernanceR1A1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, RSchemeAddress, UniqueVoteVoteSchemeId, 
+        GovernanceHc1T1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, RSchemeAddress, TokenBallotVoteSchemeId, 
             "UpdateGovernanceSchemeThreshold", DAOContractAddress, new UpdateGovernanceSchemeThresholdInput{DaoId = DaoId, SchemeAddress = RSchemeAddress, SchemeThreshold = new GovernanceSchemeThreshold
         {
             MinimalRequiredThreshold = 1,
@@ -25,9 +25,10 @@ public partial class DAOContractTests : DAOContractTestBase
             MaximalAbstentionThreshold = 1
         }}.ToByteString());
         CheckGovernanceSchemeThreshold(RSchemeAddress, 0);
-        await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceR1A1VProposalId);
+        await ApproveElf(OneElf * 100, VoteContractAddress);
+        await Vote(OneElf, VoteOption.Approved, GovernanceHc1T1VProposalId);
         BlockTimeProvider.SetBlockTime(3600 * 24 * 8 * 1000);
-        await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceR1A1VProposalId);
+        await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceHc1T1VProposalId);
         CheckGovernanceSchemeThreshold(RSchemeAddress, 1);
     }
 
@@ -42,14 +43,15 @@ public partial class DAOContractTests : DAOContractTestBase
     public async Task RemoveGovernanceSchemeTest()
     {
         await InitializeAll();
-        GovernanceHc1A1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, HcSchemeAddress, UniqueVoteVoteSchemeId,
+        GovernanceHc1T1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, HcSchemeAddress, TokenBallotVoteSchemeId,
             "RemoveGovernanceScheme", DAOContractAddress, new RemoveGovernanceSchemeInput{DaoId = DaoId, SchemeAddress = HcSchemeAddress}.ToByteString());
         CheckGovernanceSchemeThreshold(RSchemeAddress, 0);
         await HighCouncilElection(DaoId);
         await HighCouncilElectionFor(DaoId, UserAddress);
-        await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceHc1A1VProposalId);
+        await ApproveElf(OneElf * 100, VoteContractAddress);
+        await Vote(OneElf, VoteOption.Approved, GovernanceHc1T1VProposalId);
         BlockTimeProvider.SetBlockTime(3600 * 24 * 14 * 1000);
-        await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceHc1A1VProposalId);
+        await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceHc1T1VProposalId);
         var governanceScheme = await GovernanceContractStub.GetGovernanceScheme.CallAsync(HcSchemeAddress);
         governanceScheme.SchemeThreshold.ShouldBeNull();
     }
@@ -58,14 +60,15 @@ public partial class DAOContractTests : DAOContractTestBase
     public async Task SetGovernanceTokenTest()
     {
         await InitializeAll();
-        GovernanceR1A1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, RSchemeAddress, UniqueVoteVoteSchemeId, 
+        GovernanceR1T1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, RSchemeAddress, TokenBallotVoteSchemeId, 
             "SetGovernanceToken", DAOContractAddress, new SetGovernanceTokenInput{DaoId = DaoId, GovernanceToken = TokenUsdt}.ToByteString());
         CheckGovernanceToken(RSchemeAddress, TokenElf);
         CheckGovernanceToken(HcSchemeAddress, TokenElf);
         CheckDaoGovernanceToken(DaoId, TokenElf);
-        await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceR1A1VProposalId);
+        await ApproveElf(OneElf * 100, VoteContractAddress);
+        await Vote(OneElf, VoteOption.Approved, GovernanceR1T1VProposalId);
         BlockTimeProvider.SetBlockTime(3600 * 24 * 8 * 1000);
-        var result = await GovernanceContractStub.ExecuteProposal.SendWithExceptionAsync(GovernanceR1A1VProposalId);
+        var result = await GovernanceContractStub.ExecuteProposal.SendWithExceptionAsync(GovernanceR1T1VProposalId);
         result.TransactionResult.Error.ShouldContain("Token not found.");
     }
 
@@ -85,8 +88,8 @@ public partial class DAOContractTests : DAOContractTestBase
     public async Task SetProposalTimePeriodTest()
     {
         await InitializeAll();
-        GovernanceR1A1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, RSchemeAddress, UniqueVoteVoteSchemeId, 
-            "SetProposalTimePeriod", DAOContractAddress, new SetProposalTimePeriodInput{DaoId = DaoId, ProposalTimePeriod = new DaoProposalTimePeriod
+        GovernanceR1A1VProposalId = await CreateProposal(OrganizationDaoId, ProposalType.Governance, OSchemeAddress, UniqueVoteVoteSchemeId, 
+            "SetProposalTimePeriod", DAOContractAddress, new SetProposalTimePeriodInput{DaoId = OrganizationDaoId, ProposalTimePeriod = new DaoProposalTimePeriod
             {
                 ActiveTimePeriod = 15,
                 VetoActiveTimePeriod = 3,

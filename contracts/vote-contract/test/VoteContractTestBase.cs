@@ -28,11 +28,14 @@ public class VoteContractTestBase : TestBase
     protected Hash TokenBallotVoteSchemeId; //1t1v
     protected string TokenElf = "ELF";
     protected Hash DaoId;
+    protected Hash OrganizationDaoId; // organization dao
     protected Hash NetworkDaoId;
     protected Address HcSchemeAddress;
     protected Hash HcSchemeId;
     protected Address RSchemeAddress;
     protected Hash RSchemeId;
+    protected Address OSchemeAddress; // organization
+    protected Hash OSchemeId;
     protected Address NetworkDaoHcSchemeAddress;
     protected Hash NetworkDaoHcSchemeId;
     protected Address NetworkDaoRSchemeAddress;
@@ -42,11 +45,15 @@ public class VoteContractTestBase : TestBase
     protected Hash GovernanceR1T1VProposalId;
     protected Hash GovernanceHc1A1VProposalId;
     protected Hash GovernanceHc1T1VProposalId;
+    protected Hash GovernanceO1A1VProposalId;
+    protected Hash GovernanceO1T1VProposalId;
     
     protected Hash AdvisoryR1A1VProposalId;
     protected Hash AdvisoryR1T1VProposalId;
     protected Hash AdvisoryHc1A1VProposalId;
     protected Hash AdvisoryHc1T1VProposalId;
+    protected Hash AdvisoryO1A1VProposalId;
+    protected Hash AdvisoryO1T1VProposalId;
 
     protected Hash VetoR1A1VProposalId;
     protected Hash VetoR1T1VProposalId;
@@ -122,6 +129,7 @@ public class VoteContractTestBase : TestBase
         await CreateVoteScheme(VoteMechanism.TokenBallot);
         await CreateDao("DAO", true);
         await CreateDao("NetworkDAO");
+        await CreateDao("Organization DAO", false, 2);
     }
 
     private async Task CreateVoteScheme(VoteMechanism voteMechanism)
@@ -143,9 +151,9 @@ public class VoteContractTestBase : TestBase
         } 
     }
 
-    public async Task CreateDao(string daoName, bool isNetworkDao = false)
+    public async Task CreateDao(string daoName, bool isNetworkDao = false, int governanceMechanism = 0)
     {
-        var result = await DAOContractStub.CreateDAO.SendAsync(GetCreateDAOInput(daoName, isNetworkDao));
+        var result = await DAOContractStub.CreateDAO.SendAsync(GetCreateDAOInput(daoName, isNetworkDao, governanceMechanism));
         var dAOCreatedLog = GetLogEvent<DAOCreated>(result.TransactionResult);
         if (isNetworkDao)
         {
@@ -153,47 +161,59 @@ public class VoteContractTestBase : TestBase
         }
         else
         {
-            DaoId = dAOCreatedLog.DaoId;
+            if (governanceMechanism == 2)
+            {
+                OrganizationDaoId = dAOCreatedLog.DaoId;
+            }
+            else
+            {
+                DaoId = dAOCreatedLog.DaoId;
+            }
         }
         
         var governanceSchemeAddedLogs = GetMultiLogEvent<GovernanceSchemeAdded>(result.TransactionResult);
         foreach (var governanceSchemeAddedLog in governanceSchemeAddedLogs)
         {
-            if (governanceSchemeAddedLog.GovernanceMechanism == (Governance.GovernanceMechanism)GovernanceMechanism.HighCouncil)
+            switch (governanceSchemeAddedLog.GovernanceMechanism)
             {
-                if (isNetworkDao)
-                {
+                case (Governance.GovernanceMechanism)GovernanceMechanism.HighCouncil when isNetworkDao:
                     NetworkDaoHcSchemeAddress = governanceSchemeAddedLog.SchemeAddress;
                     NetworkDaoHcSchemeId = governanceSchemeAddedLog.SchemeId;
-                }
-                else
-                {
+                    break;
+                case (Governance.GovernanceMechanism)GovernanceMechanism.HighCouncil:
                     HcSchemeAddress = governanceSchemeAddedLog.SchemeAddress;
                     HcSchemeId = governanceSchemeAddedLog.SchemeId;
-                }
-            }
-            else
-            {
-                if (isNetworkDao)
-                {
+                    break;
+                case (Governance.GovernanceMechanism)GovernanceMechanism.Referendum when isNetworkDao:
                     NetworkDaoRSchemeAddress = governanceSchemeAddedLog.SchemeAddress;
                     NetworkDaoRSchemeId = governanceSchemeAddedLog.SchemeId;
-                }
-                else
-                {
+                    break;
+                case (Governance.GovernanceMechanism)GovernanceMechanism.Referendum:
                     RSchemeAddress = governanceSchemeAddedLog.SchemeAddress;
                     RSchemeId = governanceSchemeAddedLog.SchemeId;
-                }
+                    break;
+                case (Governance.GovernanceMechanism)GovernanceMechanism.Organization:
+                    OSchemeAddress = governanceSchemeAddedLog.SchemeAddress;
+                    OSchemeId = governanceSchemeAddedLog.SchemeId;
+                    break;
             }
         }
     }
 
-    internal async Task<Hash> CreateProposal(Hash DaoId, ProposalType proposalType, Address schemeAddress, Hash voteSchemeId)
+    internal async Task<Hash> CreateProposal(Hash DaoId, ProposalType proposalType, Address schemeAddress, Hash voteSchemeId, string error = "")
     {
-        var result = await GovernanceContractStub.CreateProposal.SendAsync(GetCreateProposalInput(DaoId, proposalType, schemeAddress, voteSchemeId));
-        result.TransactionResult.Error.ShouldBe("");
-        var governanceProposalLog = GetLogEvent<ProposalCreated>(result.TransactionResult);
-        return governanceProposalLog.ProposalId;
+        IExecutionResult<Hash> result;
+        if (string.IsNullOrEmpty(error))
+        {
+            result = await GovernanceContractStub.CreateProposal.SendAsync(GetCreateProposalInput(DaoId, proposalType, schemeAddress, voteSchemeId));
+            result.TransactionResult.Error.ShouldBe(error);
+            var governanceProposalLog = GetLogEvent<ProposalCreated>(result.TransactionResult);
+            return governanceProposalLog.ProposalId;
+        }
+
+        result = await GovernanceContractStub.CreateProposal.SendWithExceptionAsync(GetCreateProposalInput(DaoId, proposalType, schemeAddress, voteSchemeId));
+        result.TransactionResult.Error.ShouldContain(error);
+        return null;
     }
     
     protected async Task<IExecutionResult<Empty>> HighCouncilElection(Hash daoId)
@@ -248,6 +268,22 @@ public class VoteContractTestBase : TestBase
         result.TransactionResult.Error.ShouldBe("");
         return result;
     }
+    
+    internal async Task<long> GetDaoRemainAmount(Hash daoId, Address voter, long amount)
+    {
+        var result = (await VoteContractStub.GetDaoRemainAmount.CallAsync(
+            new GetDaoRemainAmountInput { DaoId = DaoId, Voter = DefaultAddress })).Amount;
+        result.ShouldBe(amount);
+        return result;
+    }
+    
+    internal async Task<long> GetDaoProposalRemainAmount(Hash daoId, Address voter, Hash votingItemId, long amount)
+    {
+        var result = (await VoteContractStub.GetProposalRemainAmount.CallAsync(
+            new GetProposalRemainAmountInput { DaoId = DaoId, Voter = DefaultAddress, VotingItemId = votingItemId})).Amount;
+        amount.ShouldBe(amount);
+        return result;
+    }
 
     internal async Task<IExecutionResult<Empty>> Withdraw(Hash daoId, VotingItemIdList list, long withdrawAmount)
     {
@@ -295,7 +331,7 @@ public class VoteContractTestBase : TestBase
         return res;
     }
 
-    private CreateDAOInput GetCreateDAOInput(string daoName, bool isNetworkDao = false)
+    private CreateDAOInput GetCreateDAOInput(string daoName, bool isNetworkDao = false, int governanceMechanism = 0)
     {
         return new CreateDAOInput
         {
@@ -309,14 +345,14 @@ public class VoteContractTestBase : TestBase
                     new Dictionary<string, string> { { "aa", "bb" } }
                 }
             },
-            GovernanceToken = "ELF",
+            GovernanceToken = governanceMechanism == 2 ? "" : "ELF",
             GovernanceSchemeThreshold = new DAO.GovernanceSchemeThreshold
             {
                 MinimalRequiredThreshold = 1,
-                MinimalVoteThreshold = 100000000,
-                MinimalApproveThreshold = 5000,
-                MaximalRejectionThreshold = 2000,
-                MaximalAbstentionThreshold = 2000
+                MinimalVoteThreshold = 1,
+                MinimalApproveThreshold = 0,
+                MaximalRejectionThreshold = 0,
+                MaximalAbstentionThreshold = 0
             },
             HighCouncilInput = new HighCouncilInput
             {
@@ -337,7 +373,9 @@ public class VoteContractTestBase : TestBase
                 }
             },
             IsTreasuryNeeded = false,
-            IsNetworkDao = isNetworkDao
+            IsNetworkDao = isNetworkDao,
+            GovernanceMechanism = governanceMechanism,
+            Members = new DAO.AddressList{Value = { DefaultAddress }}
         };
     }
 

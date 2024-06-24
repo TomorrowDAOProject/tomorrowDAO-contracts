@@ -89,6 +89,7 @@ message GovernanceSchemeList {
 enum GovernanceMechanism {
   REFERENDUM = 0;
   HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
 }
 message GovernanceSchemeThreshold {
   int64 minimal_required_threshold = 1; //HighCouncil -> percentage / referendum -> number

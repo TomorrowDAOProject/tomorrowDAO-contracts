@@ -74,6 +74,19 @@ public partial class DAOContract
         };
     }
     
+    private Governance.GovernanceSchemeThreshold ConvertToOrganizationGovernanceSchemeThreshold(GovernanceSchemeThreshold input)
+    {
+        return new Governance.GovernanceSchemeThreshold
+        {
+            MinimalVoteThreshold = input.MinimalVoteThreshold,
+            MinimalRequiredThreshold = input.MinimalVoteThreshold,
+            MinimalApproveThreshold = input.MinimalApproveThreshold,
+            MaximalAbstentionThreshold = input.MaximalAbstentionThreshold,
+            MaximalRejectionThreshold = input.MaximalRejectionThreshold,
+            ProposalThreshold = 0
+        };
+    }
+    
     private Governance.DaoProposalTimePeriod ConvertToProposalTimePeriod(DaoProposalTimePeriod input)
     {
         return new Governance.DaoProposalTimePeriod

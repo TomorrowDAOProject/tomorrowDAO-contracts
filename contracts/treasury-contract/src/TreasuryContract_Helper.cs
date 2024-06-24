@@ -51,6 +51,17 @@ public partial class TreasuryContract
         Assert(boolValue.Value, "DAO does not exist or is not in subsistence.");
     }
 
+    private void AssertGovernanceToken(Hash daoId)
+    {
+        var daoInfo = AssertSenderIsDaoContractOrDaoAdmin(daoId);
+        var governanceMechanism = daoInfo.GovernanceMechanism;
+        if (GovernanceMechanism.Organization != governanceMechanism)
+        {
+            Assert(!string.IsNullOrWhiteSpace(daoInfo.GovernanceToken),
+                "Governance token is not set up yet, cannot create treasury.");
+        }
+    }
+
     private TreasuryInfo AssertDaoSubsistAndTreasuryStatus(Hash daoId)
     {
         AssertDaoSubsists(daoId);

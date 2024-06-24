@@ -93,6 +93,12 @@ public partial class VoteContract
         Assert(addressList.Value.Contains(voter), "Invalid voter: not HC.");
     }
     
+    private void AssertOrganizationMember(Hash daoId, Address voter)
+    {
+        var isMember = State.DaoContract.GetIsMember.Call(new GetIsMemberInput { DaoId = daoId, Member = voter }).Value;
+        Assert(isMember, "Invalid voter: not member.");
+    }
+    
     private void AssertBP(Address voter)
     {
         var minerList = State.AEDPoSContract.GetCurrentMinerList.Call(new Empty());

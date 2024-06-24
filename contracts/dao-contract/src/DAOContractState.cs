@@ -11,6 +11,8 @@ public partial class DAOContractState : ContractState
     public MappedState<Hash, DAOInfo> DAOInfoMap { get; set; }
 
     public MappedState<Hash, Address> ReferendumAddressMap { get; set; }
+    
+    public MappedState<Hash, Address> OrganizationAddressMap { get; set; }
 
     public MappedState<string, Hash> DAONameMap { get; set; }
 
@@ -28,4 +30,6 @@ public partial class DAOContractState : ContractState
     // permission
     // DAO id -> PermissionHash -> PermissionType
     public MappedState<Hash, Hash, PermissionType> PermissionTypeMap { get; set; }
+    
+    public MappedState<Hash, AddressList> OrganizationMemberMap { get; set; }
 }

@@ -27,7 +27,8 @@ public partial class DAOContract
         return permissionType switch
         {
             PermissionType.Default => State.ReferendumAddressMap[daoId] == who ||
-                                      State.HighCouncilAddressMap[daoId] == who,
+                                      State.HighCouncilAddressMap[daoId] == who || 
+                                      State.OrganizationAddressMap[daoId] == who,
             PermissionType.Creator => State.DAOInfoMap[daoId].Creator == who,
             _ => false
         };

@@ -17,7 +17,7 @@ namespace TomorrowDAO.Contracts.Governance
             Assert(Context.Sender == State.DaoContract.Value, "No permission.");
             AssertParams(input.DaoId, input.GovernanceMechanism, input.SchemeThreshold);
             var schemePair = CalculateGovernanceSchemeHashAddressPair(input.DaoId, input.GovernanceMechanism);
-            Assert(ValidateSchemeInfo(schemePair, input.SchemeThreshold), "Scheme already exist or invalid threshold.");
+            Assert(ValidateSchemeInfo(schemePair, input), "Scheme already exist or invalid threshold.");
             var scheme = new GovernanceScheme
             {
                 SchemeId = schemePair.SchemeId,

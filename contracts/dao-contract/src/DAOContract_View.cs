@@ -98,4 +98,14 @@ public partial class DAOContract
     {
         return State.TreasuryContract.GetTreasuryAccountAddress.Call(input);
     }
+
+    public override BoolValue GetIsMember(GetIsMemberInput input)
+    {
+        return new BoolValue { Value = GetMember(input.DaoId).Value.Contains(input.Member) };
+    }
+
+    public override AddressList GetMember(Hash input)
+    {
+        return State.OrganizationMemberMap[input] == null ? new AddressList() : State.OrganizationMemberMap[input];
+    }
 }

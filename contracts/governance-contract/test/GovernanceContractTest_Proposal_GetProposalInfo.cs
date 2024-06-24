@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Shouldly;
+using TomorrowDAO.Contracts.Vote;
 using Xunit;
 
 namespace TomorrowDAO.Contracts.Governance;
@@ -10,7 +11,7 @@ public class GovernanceContractTestProposalGetProposalInfo : GovernanceContractT
     public async Task GetProposalInfoTest()
     {
         var input = MockCreateProposalInput();
-        var executionResult = await CreateProposalAsync(input, false);
+        var executionResult = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         var proposalId = executionResult.Output;
 
         var proposalInfo = await GovernanceContractStub.GetProposalInfo.CallAsync(proposalId);

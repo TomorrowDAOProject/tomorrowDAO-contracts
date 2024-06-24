@@ -70,7 +70,7 @@ public partial class DAOContractTests
         });
     }
 
-    private async Task<Hash> CreateDAOAsync(bool enableHighCouncil = true)
+    private async Task<Hash> CreateDAOAsync(bool enableHighCouncil = true, int governanceMechanism = 0)
     {
         var input = new CreateDAOInput
         {
@@ -99,7 +99,8 @@ public partial class DAOContractTests
                 MinimalApproveThreshold = 1,
                 MaximalRejectionThreshold = 2,
                 MaximalAbstentionThreshold = 2
-            }
+            },
+            GovernanceMechanism = governanceMechanism
         };
         if (enableHighCouncil)
         {
@@ -193,10 +194,10 @@ public partial class DAOContractTests
     {
         var executionResult = await CreateProposalAsync(daoId, false, executeTransaction);
         var proposalId = executionResult.Output;
-
+        await ApproveElf(OneElf * 100, VoteContractAddress);
         //Vote 10s
         BlockTimeProvider.SetBlockTime(10000);
-        await VoteProposalAsync(proposalId, 1, VoteOption.Approved);
+        await VoteProposalAsync(proposalId, OneElf, VoteOption.Approved);
 
         //add 7d
         BlockTimeProvider.SetBlockTime(3600 * 24 * 7 * 1000);
@@ -211,7 +212,7 @@ public partial class DAOContractTests
         //addressList.Value.Count.ShouldBe(2);
         var schemeAddress = addressList.Value.FirstOrDefault();
         await MockVoteScheme();
-        var voteMechanismId = await GetVoteSchemeId(VoteMechanism.UniqueVote);
+        var voteMechanismId = await GetVoteSchemeId(VoteMechanism.TokenBallot);
 
         var input = MockCreateProposalInput(executeTransaction);
 

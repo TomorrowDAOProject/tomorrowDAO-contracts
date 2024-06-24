@@ -52,6 +52,10 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
             HashHelper.ComputeFrom(Context.Sender));
 
         Assert(State.DAOInfoMap[daoId] == null, "DAO already exists.");
+        if (GovernanceMechanism.Organization == (GovernanceMechanism)input.GovernanceMechanism)
+        {
+            Assert(string.IsNullOrEmpty(input.GovernanceToken), "Invalid governance token.");
+        }
 
         ProcessDAOBaseInfo(daoId, input);
         ProcessDAOComponents(daoId, input);
@@ -66,7 +70,8 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
             GovernanceToken = input.GovernanceToken,
             ContractAddressList = daoInfo.ContractAddressList,
             IsNetworkDao = input.IsNetworkDao,
-            TreasuryAddress = treasuryAddress
+            TreasuryAddress = treasuryAddress,
+            GovernanceMechanism = daoInfo.GovernanceMechanism,
         });
 
         return new Empty();
@@ -87,7 +92,8 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
                 TreasuryContractAddress = State.TreasuryContract.Value,
                 VoteContractAddress = State.VoteContract.Value
             },
-            IsNetworkDao = input.IsNetworkDao
+            IsNetworkDao = input.IsNetworkDao,
+            GovernanceMechanism = (GovernanceMechanism)input.GovernanceMechanism
         };
 
         State.DAOInfoMap[daoId] = daoInfo;
@@ -106,8 +112,16 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
 
     private void ProcessDAOComponents(Hash daoId, CreateDAOInput input)
     {
-        ProcessReferendumGovernanceMechanism(daoId, input.GovernanceSchemeThreshold);
-        ProcessHighCouncil(daoId, input.HighCouncilInput);
+        var governanceMechanism = (GovernanceMechanism)input.GovernanceMechanism;
+        if (GovernanceMechanism.Organization == governanceMechanism)
+        {
+            ProcessOrganization(daoId, input);
+        }
+        else
+        {
+            ProcessReferendumGovernanceMechanism(daoId, input.GovernanceSchemeThreshold);
+            ProcessHighCouncil(daoId, input.HighCouncilInput);
+        }
         ProcessTreasuryContract(daoId, input.IsTreasuryNeeded);
         ProcessFileUploads(daoId, input.Files);
         ProcessDefaultPermissions(daoId, new List<string>

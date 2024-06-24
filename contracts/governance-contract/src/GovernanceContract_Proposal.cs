@@ -35,15 +35,11 @@ public partial class GovernanceContract
             "Invalid memo size.");
         var daoInfo = AssertDaoSubsistAndTreasuryStatus(input.ProposalBasicInfo.DaoId, input.Symbol, input.Amount, input.Recipient);
 
-        var voteScheme = State.VoteContract.GetVoteScheme.Call(input.ProposalBasicInfo.VoteSchemeId);
-        Assert(voteScheme != null && voteScheme.VoteMechanism == VoteMechanism.TokenBallot,
-            "Not support non-token voting.");
-
         var transaction = new ExecuteTransaction
         {
             ContractMethodName = GovernanceContractConstants.TransferMethodName,
             ToAddress = daoInfo.ContractAddressList.TreasuryContractAddress,
-            Params = new TomorrowDAO.Contracts.Treasury.TransferInput
+            Params = new Treasury.TransferInput
             {
                 DaoId = input.ProposalBasicInfo.DaoId,
                 Amount = input.Amount,
@@ -111,6 +107,8 @@ public partial class GovernanceContract
             scheme != null && schemeAddressList != null && schemeAddressList.Value.Count > 0 &&
             schemeAddressList.Value.Contains(proposalBasicInfo.SchemeAddress), "Invalid scheme address.");
         AssertTokenBalance(Context.Sender, scheme!.GovernanceToken, scheme.SchemeThreshold.ProposalThreshold);
+        AssertVoteMechanism(scheme.GovernanceMechanism, proposalBasicInfo.VoteSchemeId);
+        AssertProposer(scheme.GovernanceMechanism, Context.Sender, proposalBasicInfo.DaoId);
         var proposalId = GenerateId(input, token == null ? Context.TransactionId : token);
         return proposalId;
     }

@@ -7,6 +7,7 @@ using AElf.Types;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using TomorrowDAO.Contracts.DAO;
+using TomorrowDAO.Contracts.Vote;
 
 namespace TomorrowDAO.Contracts.Governance;
 
@@ -62,17 +63,22 @@ public partial class GovernanceContract
         };
     }
 
-    private bool ValidateSchemeInfo(GovernanceSchemeHashAddressPair scheme, GovernanceSchemeThreshold threshold)
+    private bool ValidateSchemeInfo(GovernanceSchemeHashAddressPair scheme, AddGovernanceSchemeInput input)
     {
-        return scheme.SchemeAddress != null && scheme.SchemeId != null &&
-               State.GovernanceSchemeMap[scheme.SchemeAddress] == null && ValidateGovernanceSchemeThreshold(threshold);
+        if (scheme.SchemeAddress == null || scheme.SchemeId == null || State.GovernanceSchemeMap[scheme.SchemeAddress] != null)
+        {
+            return false;
+        }
+        var threshold = input.SchemeThreshold;
+        var governanceMechanism = input.GovernanceMechanism;
+        return governanceMechanism == GovernanceMechanism.Organization ? 
+            ValidateOrganizationGovernanceSchemeThreshold(threshold) :
+            ValidateGovernanceSchemeThreshold(threshold);
     }
 
-    private bool ValidateGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
+    private bool ValidateBaseGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
     {
-        return threshold.MinimalRequiredThreshold > 0 &&
-               threshold.MinimalVoteThreshold >= 0 &&
-               threshold.MinimalApproveThreshold >= 0 &&
+        return threshold.MinimalApproveThreshold >= 0 &&
                threshold.MaximalAbstentionThreshold >= 0 &&
                threshold.MaximalRejectionThreshold >= 0 &&
                threshold.MaximalAbstentionThreshold +
@@ -80,6 +86,36 @@ public partial class GovernanceContract
                threshold.MaximalRejectionThreshold +
                threshold.MinimalApproveThreshold <= GovernanceContractConstants.AbstractVoteTotal &&
                threshold.ProposalThreshold >= 0;
+    }
+
+    private bool ValidateOrganizationGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
+    {
+        return threshold.MinimalVoteThreshold > 0 &&
+               threshold.MinimalVoteThreshold == threshold.MinimalRequiredThreshold &&
+               ValidateBaseGovernanceSchemeThreshold(threshold);
+    }
+
+    private bool ValidateGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
+    {
+        return threshold.MinimalRequiredThreshold > 0 &&
+               threshold.MinimalVoteThreshold >= 0 &&
+               ValidateBaseGovernanceSchemeThreshold(threshold);
+    }
+
+    private void AssertVoteMechanism(GovernanceMechanism governanceMechanism, Hash voteSchemeId)
+    {
+        var voteScheme = State.VoteContract.GetVoteScheme.Call(voteSchemeId);
+        var voteMechanism = voteScheme.VoteMechanism;
+        Assert(GovernanceMechanism.Organization == governanceMechanism ? 
+            VoteMechanism.UniqueVote == voteMechanism : 
+            VoteMechanism.TokenBallot == voteMechanism, "Invalid voteSchemeId.");
+    }
+
+    private void AssertProposer(GovernanceMechanism governanceMechanism, Address proposer, Hash daoId)
+    {
+        if (GovernanceMechanism.Organization != governanceMechanism) return;
+        var isProposer = State.DaoContract.GetIsMember.Call(new GetIsMemberInput { DaoId = daoId, Member = proposer }).Value;
+        Assert(isProposer, "Invalid proposer.");
     }
 
     private Hash GenerateId<T>(T input, Hash token) where T : IMessage<T>

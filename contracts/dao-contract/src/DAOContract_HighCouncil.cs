@@ -34,7 +34,7 @@ public partial class DAOContract
         State.GovernanceContract.AddGovernanceScheme.Send(new AddGovernanceSchemeInput
         {
             DaoId = daoId,
-            GovernanceMechanism = GovernanceMechanism.HighCouncil,
+            GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.HighCouncil,
             SchemeThreshold = governanceSchemeThreshold,
             GovernanceToken = State.DAOInfoMap[daoId].GovernanceToken
         });
@@ -43,7 +43,7 @@ public partial class DAOContract
             new CalculateGovernanceSchemeAddressInput
             {
                 DaoId = daoId,
-                GovernanceMechanism = GovernanceMechanism.HighCouncil
+                GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.HighCouncil
             });
 
         State.ElectionContract.RegisterElectionVotingEvent.Send(new RegisterElectionVotingEventInput

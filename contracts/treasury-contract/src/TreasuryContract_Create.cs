@@ -10,9 +10,7 @@ public partial class TreasuryContract
     {
         AssertNotNullOrEmpty(input);
         AssertDaoSubsists(input.DaoId);
-        var daoInfo = AssertSenderIsDaoContractOrDaoAdmin(input.DaoId);
-        Assert(!string.IsNullOrWhiteSpace(daoInfo.GovernanceToken),
-            "Governance token is not set up yet, cannot create treasury.");
+        AssertGovernanceToken(input.DaoId);
         var treasuryInfo = State.TreasuryInfoMap[input.DaoId];
         Assert(treasuryInfo == null, $"Dao {input.DaoId} treasury has been created.");
 

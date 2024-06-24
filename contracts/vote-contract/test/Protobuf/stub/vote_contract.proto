@@ -110,6 +110,7 @@ enum VoteOption {
 enum GovernanceMechanism {
   REFERENDUM = 0;
   HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
 }
 
 message VotingResult {
@@ -234,8 +235,7 @@ message GetVirtualAddressInput {
 
 message GetDaoRemainAmountInput {
   aelf.Hash dao_id = 1;
-  aelf.Hash voting_item_id = 2;
-  aelf.Address voter = 3;
+  aelf.Address voter = 2;
 }
 
 message GetProposalRemainAmountInput {

@@ -25,4 +25,7 @@ public static class DAOContractConstants
     public const string UploadFileInfos = "uploadfileinfos";
     public const string RemoveFileInfos = "removefileinfos";
     public const string UpdateMetadata = "updatemetadata";
+    
+    // organization
+    public const int OrganizationMemberMaxCount = 5000;
 }
