@@ -78,7 +78,8 @@ public partial class GovernanceContract
 
     private bool ValidateBaseGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
     {
-        return threshold.MinimalApproveThreshold >= 0 &&
+        return threshold.MinimalRequiredThreshold > 0 &&
+               threshold.MinimalApproveThreshold >= 0 &&
                threshold.MaximalAbstentionThreshold >= 0 &&
                threshold.MaximalRejectionThreshold >= 0 &&
                threshold.MaximalAbstentionThreshold +
@@ -90,15 +91,13 @@ public partial class GovernanceContract
 
     private bool ValidateOrganizationGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
     {
-        return threshold.MinimalVoteThreshold > 0 &&
-               threshold.MinimalVoteThreshold == threshold.MinimalRequiredThreshold &&
+        return threshold.MinimalVoteThreshold == 0 && // Organization dao do not check mon vote count
                ValidateBaseGovernanceSchemeThreshold(threshold);
     }
 
     private bool ValidateGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
     {
-        return threshold.MinimalRequiredThreshold > 0 &&
-               threshold.MinimalVoteThreshold >= 0 &&
+        return threshold.MinimalVoteThreshold >= 0 &&
                ValidateBaseGovernanceSchemeThreshold(threshold);
     }
 
@@ -189,6 +188,13 @@ public partial class GovernanceContract
         var minerList = State.AEDPoSContract.GetCurrentMinerList.Call(new Empty());
         Assert(minerList != null && minerList.Pubkeys.Count > 0, "Invalid BP Count.");
         return minerList!.Pubkeys.Count;
+    }
+    
+    private long CallAndCheckMemberCount(Hash daoId)
+    {
+        var result = State.DaoContract.GetMemberCount.Call(daoId).Value;
+        Assert(result > 0, "Invalid Member Count.");
+        return result;
     }
 
     #region proposal

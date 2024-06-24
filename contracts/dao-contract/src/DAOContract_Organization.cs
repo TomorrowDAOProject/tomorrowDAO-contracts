@@ -43,19 +43,18 @@ public partial class DAOContract
 
     private void AddMember(Hash daoId, AddressList members)
     {
-        Assert(members != null, "Invalid input : no members to add.");
-        var currentMembers = GetMember(daoId);
+        Assert(members != null && members!.Value.Count <= DAOContractConstants.OnceOrganizationMemberMaxCount, 
+            "Invalid add members.");
         var toAddMembers = new AddressList();
         foreach (var member in members!.Value)
         {
-            if (!currentMembers.Value.Contains(member))
+            if (!State.OrganizationMemberMap[daoId][member])
             {
                 toAddMembers.Value.Add(member);
+                State.OrganizationMemberMap[daoId][member] = true;
             }
         }
-        Assert(toAddMembers!.Value.Count + currentMembers!.Value.Count <= DAOContractConstants.OrganizationMemberMaxCount, "Too many members to add.");
-        currentMembers.Value.AddRange(toAddMembers.Value);
-        State.OrganizationMemberMap[daoId] = currentMembers;
+        State.OrganizationMemberCountMap[daoId] += toAddMembers.Value.Count;
         Context.Fire(new MemberAdded
         {
             DaoId = daoId,
@@ -65,27 +64,23 @@ public partial class DAOContract
 
     public override Empty RemoveMember(RemoveMemberInput input)
     {
-        Assert(input is { RemoveMembers: not null }, "Invalid input : no members to remove.");
-        Assert(input.RemoveMembers!.Value.Count <= DAOContractConstants.OrganizationMemberMaxCount, "Too many members to remove.");
+        Assert(input is { RemoveMembers: not null } && input.RemoveMembers!.Value.Count <= DAOContractConstants.OnceOrganizationMemberMaxCount, 
+            "Invalid remove members.");
         CheckDAOExistsAndSubsist(input.DaoId);
         AssertPermission(input.DaoId, nameof(RemoveMember));
-        
-        var currentMembers = GetMember(input.DaoId);
+
         var toRemoveMembers = new AddressList();
         foreach (var member in input.RemoveMembers!.Value)
         {
-            if (currentMembers.Value.Contains(member))
+            if (State.OrganizationMemberMap[input.DaoId][member])
             {
                 toRemoveMembers.Value.Add(member);
-                currentMembers.Value.Remove(member);
+                State.OrganizationMemberMap[input.DaoId].Remove(member);
             }
         }
-
-        var governanceSchemeAddress = State.OrganizationAddressMap[input.DaoId];
-        var governanceScheme = State.GovernanceContract.GetGovernanceScheme.Call(governanceSchemeAddress);
-        var minVoter = governanceScheme.SchemeThreshold.MinimalRequiredThreshold;
-        Assert(currentMembers.Value.Count >= minVoter, "members after remove will be less than minVoter.");
-        State.OrganizationMemberMap[input.DaoId] = currentMembers;
+        Assert(State.OrganizationMemberCountMap[input.DaoId] > toRemoveMembers.Value.Count, 
+            "members after remove will be less than 0.");
+        State.OrganizationMemberCountMap[input.DaoId] -= toRemoveMembers.Value.Count;
         
         Context.Fire(new MemberRemoved
         {

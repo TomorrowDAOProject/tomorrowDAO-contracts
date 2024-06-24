@@ -78,8 +78,8 @@ public partial class DAOContract
     {
         return new Governance.GovernanceSchemeThreshold
         {
-            MinimalVoteThreshold = input.MinimalVoteThreshold,
-            MinimalRequiredThreshold = input.MinimalVoteThreshold,
+            MinimalVoteThreshold = 0,
+            MinimalRequiredThreshold = input.MinimalRequiredThreshold,
             MinimalApproveThreshold = input.MinimalApproveThreshold,
             MaximalAbstentionThreshold = input.MaximalAbstentionThreshold,
             MaximalRejectionThreshold = input.MaximalRejectionThreshold,

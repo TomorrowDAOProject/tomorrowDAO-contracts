@@ -290,6 +290,13 @@ public class DAOContractTestBase : TestBase
         return result;
     }
 
+    internal async Task<long> GetMemberCount(Hash daoId, long count)
+    {
+        var result = (await DAOContractStub.GetMemberCount.CallAsync(daoId)).Value;
+        result.ShouldBe(count);
+        return result;
+    }
+
     internal async Task<Hash> CreateVetoProposal(Address schemeAddress, Hash voteSchemeId, Hash vetoProposalId)
     {
         var result = await GovernanceContractStub.CreateVetoProposal.SendAsync(GetCreateVetoProposalInput(schemeAddress, voteSchemeId, vetoProposalId));

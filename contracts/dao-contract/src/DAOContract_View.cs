@@ -101,11 +101,11 @@ public partial class DAOContract
 
     public override BoolValue GetIsMember(GetIsMemberInput input)
     {
-        return new BoolValue { Value = GetMember(input.DaoId).Value.Contains(input.Member) };
+        return new BoolValue { Value = State.OrganizationMemberMap[input.DaoId][input.Member] };
     }
 
-    public override AddressList GetMember(Hash input)
+    public override Int64Value GetMemberCount(Hash input)
     {
-        return State.OrganizationMemberMap[input] == null ? new AddressList() : State.OrganizationMemberMap[input];
+        return new Int64Value{ Value = State.OrganizationMemberCountMap[input]};
     }
 }

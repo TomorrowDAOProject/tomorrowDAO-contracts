@@ -57,7 +57,7 @@ service DAOContract {
   rpc AddMember (AddMemberInput) returns (google.protobuf.Empty) {}
   rpc RemoveMember (RemoveMemberInput) returns (google.protobuf.Empty) {}
   rpc GetIsMember (GetIsMemberInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
-  rpc GetMember (aelf.Hash) returns (AddressList) {option (aelf.is_view) = true;}
+  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int64Value) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {

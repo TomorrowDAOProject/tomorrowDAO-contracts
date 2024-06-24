@@ -406,19 +406,28 @@ public partial class GovernanceContract
         var schemeAddress = proposalInfo.ProposalBasicInfo.SchemeAddress;
         var governanceScheme = State.GovernanceSchemeMap[schemeAddress];
         Assert(governanceScheme != null, $"Governance Scheme {schemeAddress} not exists.");
+        if (governanceScheme!.GovernanceMechanism == GovernanceMechanism.Referendum)
+        {
+            return threshold.MinimalRequiredThreshold;
+        }
+        
+        var daoId = proposalInfo.ProposalBasicInfo.DaoId;
+        var daoInfo = CallAndCheckDaoInfo(daoId);
+        long convertCount;
         if (governanceScheme!.GovernanceMechanism == GovernanceMechanism.HighCouncil)
         {
-            var daoId = proposalInfo.ProposalBasicInfo.DaoId;
-            var daoInfo = CallAndCheckDaoInfo(daoId);
-            var highCouncilCount = daoInfo.IsNetworkDao ? CallAndCheckBpCount() : CallAndCheckHighCouncilCount(daoId);
-            var realMinimalRequiredThreshold = threshold.MinimalRequiredThreshold * highCouncilCount;
-            realMinimalRequiredThreshold =
-                realMinimalRequiredThreshold / GovernanceContractConstants.AbstractVoteTotal +
-                (realMinimalRequiredThreshold % GovernanceContractConstants.AbstractVoteTotal == 0 ? 0 : 1);
-            return realMinimalRequiredThreshold;
+            convertCount = daoInfo.IsNetworkDao ? CallAndCheckBpCount() : CallAndCheckHighCouncilCount(daoId);
+        }
+        else
+        {
+            convertCount = CallAndCheckMemberCount(daoId);
         }
 
-        return threshold.MinimalRequiredThreshold;
+        var realMinimalRequiredThreshold = threshold.MinimalRequiredThreshold * convertCount;
+        realMinimalRequiredThreshold =
+            realMinimalRequiredThreshold / GovernanceContractConstants.AbstractVoteTotal +
+            (realMinimalRequiredThreshold % GovernanceContractConstants.AbstractVoteTotal == 0 ? 0 : 1);
+        return realMinimalRequiredThreshold;
     }
 
     private bool HasPendingStatus(Hash proposalId)

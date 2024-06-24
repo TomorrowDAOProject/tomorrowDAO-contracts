@@ -27,5 +27,5 @@ public static class DAOContractConstants
     public const string UpdateMetadata = "updatemetadata";
     
     // organization
-    public const int OrganizationMemberMaxCount = 5000;
+    public const int OnceOrganizationMemberMaxCount = 10000;
 }

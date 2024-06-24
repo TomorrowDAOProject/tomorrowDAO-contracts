@@ -31,5 +31,7 @@ public partial class DAOContractState : ContractState
     // DAO id -> PermissionHash -> PermissionType
     public MappedState<Hash, Hash, PermissionType> PermissionTypeMap { get; set; }
     
-    public MappedState<Hash, AddressList> OrganizationMemberMap { get; set; }
+    public MappedState<Hash, Address, bool> OrganizationMemberMap { get; set; }
+    
+    public MappedState<Hash, long> OrganizationMemberCountMap { get; set; }
 }

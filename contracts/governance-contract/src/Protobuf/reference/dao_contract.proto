@@ -57,6 +57,7 @@ service DAOContract {
   rpc AddMember (AddMemberInput) returns (google.protobuf.Empty) {}
   rpc RemoveMember (RemoveMemberInput) returns (google.protobuf.Empty) {}
   rpc GetIsMember (GetIsMemberInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int32Value) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {
@@ -82,7 +83,6 @@ message CreateDAOInput {
 message HighCouncilInput {
   HighCouncilConfig high_council_config = 1;  // empty if high council is not enabled
   GovernanceSchemeThreshold governance_scheme_threshold = 2;  // governance scheme threshold for high council
-  AddressList members = 3;
 }
 
 message Metadata {

@@ -23,6 +23,7 @@ public partial class DAOContractTests
         BlockTimeProvider.SetBlockTime(3600 * 24 * 8 * 1000);
         await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceO1A1VProposalId);
         await GetIsMember(OrganizationDaoId, UserAddress, true);
+        await GetMemberCount(OrganizationDaoId, 2);
     }
 
     [Fact]
@@ -32,6 +33,7 @@ public partial class DAOContractTests
         await RemoveMemberVote();
         await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceO1A1VProposalId);
         await GetIsMember(OrganizationDaoId, DefaultAddress, false);
+        await GetMemberCount(OrganizationDaoId, 1);
     }
 
     [Fact]
@@ -40,7 +42,7 @@ public partial class DAOContractTests
         await GetIsMemberTest();
         await RemoveMemberVote();
         var result = await GovernanceContractStub.ExecuteProposal.SendWithExceptionAsync(GovernanceO1A1VProposalId);
-        result.TransactionResult.Error.ShouldContain("members after remove will be less than minVoter.");
+        result.TransactionResult.Error.ShouldContain("members after remove will be less than 0.");
     }
 
     private async Task RemoveMemberVote()
@@ -57,5 +59,12 @@ public partial class DAOContractTests
     {
         await InitializeAll();
         await GetIsMember(OrganizationDaoId, DefaultAddress, true);
+    }
+
+    [Fact]
+    public async Task GetMemberCountTest()
+    {
+        await InitializeAll();
+        await GetMemberCount(OrganizationDaoId, 1);
     }
 }
