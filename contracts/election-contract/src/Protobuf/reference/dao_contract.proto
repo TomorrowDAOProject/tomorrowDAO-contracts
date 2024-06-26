@@ -52,6 +52,12 @@ service DAOContract {
   //Treasury 
   rpc SetTreasuryContractAddress (aelf.Address) returns (google.protobuf.Empty) {}
   rpc GetTreasuryAddress(aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+  
+  //Organization
+  rpc AddMember (AddMemberInput) returns (google.protobuf.Empty) {}
+  rpc RemoveMember (RemoveMemberInput) returns (google.protobuf.Empty) {}
+  rpc GetIsMember (GetIsMemberInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int64Value) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {
@@ -65,16 +71,20 @@ message InitializeInput {
 message CreateDAOInput {
   Metadata metadata = 1;  // basic info
   string governance_token = 2;  // can be empty
-  GovernanceSchemeThreshold governance_scheme_threshold = 3;  // governance scheme threshold for referendum
-  HighCouncilInput high_council_input = 4;
-  bool is_treasury_needed = 5;  // if true, create treasury
-  repeated File files = 6;
-  bool is_network_dao = 7;
+  int32 governance_mechanism = 3;
+  AddressList members = 4;
+  GovernanceSchemeThreshold governance_scheme_threshold = 5;  // governance scheme threshold for referendum
+  HighCouncilInput high_council_input = 6;
+  bool is_treasury_needed = 7;  // if true, create treasury
+  repeated File files = 8;
+  bool is_network_dao = 9;
 }
 
 message HighCouncilInput {
   HighCouncilConfig high_council_config = 1;  // empty if high council is not enabled
   GovernanceSchemeThreshold governance_scheme_threshold = 2;  // governance scheme threshold for high council
+  AddressList high_council_members = 3;
+  bool is_high_council_election_close = 4;
 }
 
 message Metadata {
@@ -125,6 +135,16 @@ enum PermissionType {
   CREATOR = 1;         // Creator only
 }
 
+enum GovernanceMechanism {
+  REFERENDUM = 0;
+  HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
+}
+
+message AddressList {
+  repeated aelf.Address value = 1;
+}
+
 message PermissionInfo {
   aelf.Address where = 1;
   aelf.Address who = 2;
@@ -138,6 +158,7 @@ message DAOInfo {
   string governance_token = 4;
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
+  GovernanceMechanism governance_mechanism = 7;
 }
 
 message ContractAddressList {
@@ -211,6 +232,21 @@ message SetProposalTimePeriodInput {
   DaoProposalTimePeriod proposal_time_period = 2;
 }
 
+message AddMemberInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_members = 2;
+}
+
+message RemoveMemberInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_members = 2;
+}
+
+message GetIsMemberInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address member = 2;
+}
+
 message DaoProposalTimePeriod {
   int64 active_time_period = 1; //day
   int64 veto_active_time_period = 2; //day
@@ -229,6 +265,7 @@ message DAOCreated {
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
   aelf.Address treasury_address = 7;
+  GovernanceMechanism governance_mechanism = 8;
 }
 
 message SubsistStatusSet {
@@ -265,4 +302,16 @@ message MetadataUpdated {
   option (aelf.is_event) = true;
   aelf.Hash dao_id = 1;
   Metadata metadata = 2;
+}
+
+message MemberAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList add_members = 2;
+}
+
+message MemberRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList remove_members = 2;
 }

@@ -18,15 +18,20 @@ public partial class DAOContract
         CheckDaoSubsistStatus(input.DaoId);
         AssertPermission(input.DaoId, nameof(EnableHighCouncil));
 
-        ProcessEnableHighCouncil(input.DaoId, input.HighCouncilInput.HighCouncilConfig,
-            input.HighCouncilInput.GovernanceSchemeThreshold);
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        Assert(daoInfo.GovernanceMechanism != GovernanceMechanism.Organization,
+            "Multi-signature governance cannot enable the High Council.");
+
+        ProcessEnableHighCouncil(input.DaoId, input.HighCouncilInput);
 
         return new Empty();
     }
 
-    private void ProcessEnableHighCouncil(Hash daoId, HighCouncilConfig highCouncilConfig,
-        GovernanceSchemeThreshold threshold)
+    private void ProcessEnableHighCouncil(Hash daoId, HighCouncilInput highCouncilInput)
     {
+        HighCouncilConfig highCouncilConfig = highCouncilInput.HighCouncilConfig;
+        GovernanceSchemeThreshold threshold = highCouncilInput.GovernanceSchemeThreshold;
+
         State.HighCouncilEnabledStatusMap[daoId] = true;
 
         var governanceSchemeThreshold = ConvertToGovernanceSchemeThreshold(threshold);
@@ -46,15 +51,30 @@ public partial class DAOContract
                 GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.HighCouncil
             });
 
-        State.ElectionContract.RegisterElectionVotingEvent.Send(new RegisterElectionVotingEventInput
+        if (highCouncilInput.HighCouncilMembers != null && highCouncilInput.HighCouncilMembers.Value.Count > 0)
         {
-            DaoId = daoId,
-            ElectionPeriod = highCouncilConfig.ElectionPeriod,
-            GovernanceToken = State.DAOInfoMap[daoId].GovernanceToken,
-            StakeThreshold = highCouncilConfig.StakingAmount,
-            MaxHighCouncilCandidateCount = highCouncilConfig.MaxHighCouncilCandidateCount,
-            MaxHighCouncilMemberCount = highCouncilConfig.MaxHighCouncilMemberCount
-        });
+            State.ElectionContract.AddHighCouncil.Send(new AddHighCouncilInput
+            {
+                DaoId = daoId,
+                AddHighCouncils = new Election.AddressList()
+                {
+                    Value = { highCouncilInput.HighCouncilMembers.Value }
+                }
+            });
+        }
+
+        if (!highCouncilInput.IsHighCouncilElectionClose)
+        {
+            State.ElectionContract.RegisterElectionVotingEvent.Send(new RegisterElectionVotingEventInput
+            {
+                DaoId = daoId,
+                ElectionPeriod = highCouncilConfig.ElectionPeriod,
+                GovernanceToken = State.DAOInfoMap[daoId].GovernanceToken,
+                StakeThreshold = highCouncilConfig.StakingAmount,
+                MaxHighCouncilCandidateCount = highCouncilConfig.MaxHighCouncilCandidateCount,
+                MaxHighCouncilMemberCount = highCouncilConfig.MaxHighCouncilMemberCount
+            });
+        }
 
         Context.Fire(new HighCouncilEnabled
         {
@@ -72,13 +92,13 @@ public partial class DAOContract
         Assert(input != null, "Invalid input.");
         Assert(IsHashValid(input), "Invalid input dao id.");
         Assert(State.HighCouncilEnabledStatusMap[input] == true, "High council already disabled.");
-        
+
         CheckDAOExists(input);
         CheckDaoSubsistStatus(input);
         AssertPermission(input, nameof(DisableHighCouncil));
-        
+
         State.HighCouncilEnabledStatusMap[input] = false;
-        
+
         Context.Fire(new HighCouncilDisabled
         {
             DaoId = input
@@ -86,11 +106,11 @@ public partial class DAOContract
 
         return new Empty();
     }
-    
+
     private void ProcessHighCouncil(Hash daoId, HighCouncilInput input)
     {
         if (input == null || !IsStringValid(State.DAOInfoMap[daoId].GovernanceToken)) return;
 
-        ProcessEnableHighCouncil(daoId, input.HighCouncilConfig, input.GovernanceSchemeThreshold);
+        ProcessEnableHighCouncil(daoId, input);
     }
 }

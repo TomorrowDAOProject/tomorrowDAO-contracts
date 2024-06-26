@@ -83,6 +83,8 @@ message CreateDAOInput {
 message HighCouncilInput {
   HighCouncilConfig high_council_config = 1;  // empty if high council is not enabled
   GovernanceSchemeThreshold governance_scheme_threshold = 2;  // governance scheme threshold for high council
+  AddressList high_council_members = 3;
+  bool is_high_council_election_close = 4;
 }
 
 message Metadata {

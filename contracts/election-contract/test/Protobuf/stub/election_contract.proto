@@ -19,6 +19,10 @@ service ElectionContract {
 
   rpc RegisterElectionVotingEvent (RegisterElectionVotingEventInput) returns (google.protobuf.Empty) {}
 
+  rpc AddHighCouncil (AddHighCouncilInput) returns (google.protobuf.Empty) {}
+
+  rpc RemoveHighCouncil (RemoveHighCouncilInput) returns (google.protobuf.Empty) {}
+
   rpc AnnounceElection (AnnounceElectionInput) returns (google.protobuf.Empty) {}
 
   rpc AnnounceElectionFor (AnnounceElectionForInput) returns (google.protobuf.Empty) {}
@@ -85,6 +89,14 @@ service ElectionContract {
   }
 
   rpc GetElectionResult (GetElectionResultInput) returns (ElectionResult) {
+    option (aelf.is_view) = true;
+  }
+
+  rpc GetInitialHighCouncilMembers (aelf.Hash) returns (AddressList) {
+    option (aelf.is_view) = true;
+  }
+
+  rpc GetHighCouncilMembers (aelf.Hash) returns (AddressList) {
     option (aelf.is_view) = true;
   }
 }
@@ -470,8 +482,26 @@ message EvilNodeRemoved {
   aelf.Address evil_node_address = 2;
 }
 
-
 message ElectionEnabled {
   option (aelf.is_event) = true;
   aelf.Hash dao_id = 1;
+}
+
+message AddHighCouncilInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_high_councils = 2;
+}
+message HighCouncilAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList add_high_councils = 2;
+}
+message RemoveHighCouncilInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_high_councils = 2;
+}
+message HighCouncilRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList remove_high_councils = 2;
 }

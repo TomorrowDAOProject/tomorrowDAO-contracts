@@ -64,10 +64,13 @@ public partial class ElectionContractState : ContractState
 
     // dao -> termId -> snapshot
     public MappedState<Hash, long, TermSnapshot> Snapshots { get; set; }
-
+    
     // dao id -> bool
     public MappedState<Hash, bool> VotingEventEnabledStatus { get; set; }
-
+    
     // dao -> Whether HC voting is turned on
     public MappedState<Hash, bool> ElectionEnabledStatus { get; set; }
+    
+    //dao id -> high council member list
+    public MappedState<Hash, AddressList> InitialHighCouncilMembers { get; set; }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AElf.CSharp.Core;
@@ -110,7 +111,7 @@ public partial class ElectionContract
         State.ElectedCandidates[daoId].Value.AddRange(electedCandidateAddresses);
     }
 
-    private List<Address> GetVictories(Hash daoId, List<Address> currentMiners)
+    private List<Address> GetVictories(Hash daoId, List<Address> currentHighCouncilMembers)
     {
         var highCouncilConfig = State.HighCouncilConfig[daoId];
         Assert(highCouncilConfig != null, "HighCouncilConfig not found.");
@@ -121,9 +122,20 @@ public partial class ElectionContract
 
         var maxMemberCount = highCouncilConfig!.MaxHighCouncilMemberCount;
         var diff = maxMemberCount - validCandidates.Count;
+        //Valid candidates not enough
         if (diff > 0)
         {
-            //TODO Valid candidates not enough
+            victories = new List<Address>(validCandidates);
+            var backups = currentHighCouncilMembers.Where(k => !validCandidates.Contains(k)).ToList();
+            if (State.InitialHighCouncilMembers[daoId]?.Value is { Count: > 0 })
+            {
+                backups.AddRange(
+                    State.InitialHighCouncilMembers[daoId].Value.Where(k => !backups.Contains(k)));
+            }
+
+            victories.AddRange(backups.OrderBy(p => p)
+                .Take(Math.Min((int)diff, (int)maxMemberCount)));
+            return victories;
         }
 
         victories = validCandidates.Select(k => State.CandidateVotes[daoId][k])
@@ -135,7 +147,7 @@ public partial class ElectionContract
 
     private List<Address> GetValidCandidates(Hash daoId)
     {
-        if (State.Candidates[daoId].Value == null)
+        if (State.Candidates[daoId]?.Value == null)
         {
             return new List<Address>();
         }

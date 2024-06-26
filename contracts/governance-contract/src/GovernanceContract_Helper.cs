@@ -175,7 +175,7 @@ public partial class GovernanceContract
 
     private int CallAndCheckHighCouncilCount(Hash daoId)
     {
-        var addressList = State.ElectionContract.GetVictories.Call(daoId);
+        var addressList = State.ElectionContract.GetHighCouncilMembers.Call(daoId);
         // todo temporary use int.MaxValue to make hc can not approve
         // Assert(addressList != null && addressList.Value.Count > 0,
         //     "The 'High Council' elections have not taken place yet.");

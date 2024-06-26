@@ -14,7 +14,6 @@ public partial class ElectionContract : ElectionContractContainer.ElectionContra
         var contractInfo = State.GenesisContract.GetContractInfo.Call(Context.Self);
         Assert(contractInfo.Deployer == Context.Sender, "No permission.");
         AssertNotNullOrEmpty(input.DaoContractAddress, "DaoContractAddress");
-        AssertNotNullOrEmpty(input.VoteContractAddress, "VoteContractAddress");
         AssertNotNullOrEmpty(input.GovernanceContractAddress, "GovernanceContractAddress");
         State.DaoContract.Value = input.DaoContractAddress;
         State.GovernanceContract.Value = input.GovernanceContractAddress;
@@ -69,6 +68,74 @@ public partial class ElectionContract : ElectionContractContainer.ElectionContra
         return new Empty();
     }
 
+    public override Empty AddHighCouncil(AddHighCouncilInput input)
+    {
+        AssertNotNullOrEmpty(input);
+        AssertNotNullOrEmpty(input.AddHighCouncils);
+        AssertNotNullOrEmpty(input.DaoId);
+        Assert(input.AddHighCouncils.Value is { Count: > 0 }, "Invalid input.");
+        AssertSenderIsDaoContractOrProposal(input.DaoId);
+
+        var validAddressList = new AddressList();
+        var addressList = State.InitialHighCouncilMembers[input.DaoId] ?? new AddressList();
+        foreach (var address in input.AddHighCouncils.Value!)
+        {
+            if (!addressList.Value.Contains(address))
+            {
+                addressList.Value.Add(address);
+                validAddressList.Value.Add(address);
+            }
+        }
+
+        Assert(addressList.Value.Count > ElectionContractConstants.MaxInitialHighCouncilMemberCount,
+            $"The number of High Council members cannot exceed {ElectionContractConstants.MaxInitialHighCouncilMemberCount}.");
+
+        State.InitialHighCouncilMembers[input.DaoId] = addressList;
+
+        Context.Fire(new HighCouncilAdded
+        {
+            DaoId = input.DaoId,
+            AddHighCouncils = validAddressList
+        });
+        return new Empty();
+    }
+
+    public override Empty RemoveHighCouncil(RemoveHighCouncilInput input)
+    {
+        AssertNotNullOrEmpty(input);
+        AssertNotNullOrEmpty(input.RemoveHighCouncils);
+        AssertNotNullOrEmpty(input.DaoId);
+        Assert(input.RemoveHighCouncils.Value is { Count: > 0 }, "Invalid input.");
+        AssertSenderIsDaoContractOrProposal(input.DaoId);
+
+        var validAddressList = new AddressList();
+        var addressList = State.InitialHighCouncilMembers[input.DaoId] ?? new AddressList();
+        foreach (var address in input.RemoveHighCouncils.Value)
+        {
+            if (addressList.Value.Contains(address))
+            {
+                addressList.Value.Remove(address);
+                validAddressList.Value.Add(address);
+            }
+        }
+
+        if (addressList.Value.Count == 0)
+        {
+            State.InitialHighCouncilMembers.Remove(input.DaoId);
+        }
+        else
+        {
+            State.InitialHighCouncilMembers[input.DaoId] = addressList;
+        }
+
+        Context.Fire(new HighCouncilRemoved
+        {
+            DaoId = input.DaoId,
+            RemoveHighCouncils = validAddressList
+        });
+        return new Empty();
+    }
+
     private Hash RegisterVoteItem(Hash daoId, HighCouncilConfig config)
     {
         var votingItemId = AssertValidNewVotingItem(daoId);
@@ -103,7 +170,7 @@ public partial class ElectionContract : ElectionContractContainer.ElectionContra
         State.CurrentTermNumber[daoId] = 1;
         return votingItemId;
     }
-    
+
     private void InitHighCouncilConfig(RegisterElectionVotingEventInput input)
     {
         AssertValidAndSetHighCouncilConfig(new SetHighCouncilConfigInput
@@ -129,10 +196,10 @@ public partial class ElectionContract : ElectionContractContainer.ElectionContra
         Assert(input.StakeThreshold > 0, "Invalid StakeThreshold.");
         Assert(input.ElectionPeriod >= 0, "Invalid ElectionPeriod.");
         AssertNotNullOrEmpty(input.GovernanceToken, "GovernanceToken");
-        
+
         //var governanceTokenInfo = GetTokenInfo(input.GovernanceToken);
         //Assert(governanceTokenInfo != null && governanceTokenInfo.Symbol.Length > 0, "Invalid governanceToken");
-        
+
         var highCouncilConfig = State.HighCouncilConfig[input.DaoId] ?? new HighCouncilConfig();
         highCouncilConfig.MaxHighCouncilMemberCount = input.MaxHighCouncilMemberCount;
         highCouncilConfig.MaxHighCouncilCandidateCount = input.MaxHighCouncilCandidateCount;

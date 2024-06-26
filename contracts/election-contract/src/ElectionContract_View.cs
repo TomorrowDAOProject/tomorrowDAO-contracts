@@ -104,4 +104,21 @@ public partial class ElectionContract
         };
         return result;
     }
+
+    public override AddressList GetInitialHighCouncilMembers(Hash input)
+    {
+        return State.InitialHighCouncilMembers[input] ?? new AddressList();
+    }
+
+    public override AddressList GetHighCouncilMembers(Hash input)
+    {
+        if (State.VotingEventEnabledStatus[input])
+        {
+            return GetVictories(input);
+        }
+        else
+        {
+            return GetInitialHighCouncilMembers(input);
+        }
+    }
 }
