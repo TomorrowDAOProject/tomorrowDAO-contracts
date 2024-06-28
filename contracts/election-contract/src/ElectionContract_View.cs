@@ -114,11 +114,9 @@ public partial class ElectionContract
     {
         if (State.VotingEventEnabledStatus[input])
         {
-            return GetVictories(input);
+            var currentTermNumber = State.CurrentTermNumber[input];
+            return currentTermNumber == 1 ? GetInitialHighCouncilMembers(input) : GetVictories(input);
         }
-        else
-        {
-            return GetInitialHighCouncilMembers(input);
-        }
+        return GetInitialHighCouncilMembers(input);
     }
 }
