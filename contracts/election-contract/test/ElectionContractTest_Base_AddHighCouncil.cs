@@ -76,7 +76,7 @@ public class ElectionContractTestBaseAddHighCouncil : ElectionContractTestBase
 
         addressList = await ElectionContractStub.GetHighCouncilMembers.CallAsync(daoId);
         addressList.ShouldNotBeNull();
-        addressList.Value.Count.ShouldBe(0);
+        addressList.Value.Count.ShouldBe(2);
 
         await ElectionContractStub.TakeSnapshot.SendAsync(new TakeElectionSnapshotInput
         {
