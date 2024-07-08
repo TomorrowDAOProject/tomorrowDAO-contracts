@@ -92,7 +92,7 @@ service ElectionContract {
     option (aelf.is_view) = true;
   }
 
-  rpc GetDefaultHighCouncilMembers (aelf.Hash) returns (AddressList) {
+  rpc GetInitialHighCouncilMembers (aelf.Hash) returns (AddressList) {
     option (aelf.is_view) = true;
   }
 

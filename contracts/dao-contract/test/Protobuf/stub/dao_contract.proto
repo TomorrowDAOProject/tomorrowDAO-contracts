@@ -30,6 +30,8 @@ service DAOContract {
   rpc EnableHighCouncil (EnableHighCouncilInput) returns (google.protobuf.Empty) {}
   rpc DisableHighCouncil (aelf.Hash) returns (google.protobuf.Empty) {}
   rpc GetHighCouncilStatus (aelf.Hash) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc AddHighCouncilMembers (AddHighCouncilMembersInput) returns (google.protobuf.Empty) {}
+  rpc RemoveHighCouncilMembers (RemoveHighCouncilMembersInput) returns (google.protobuf.Empty) {}
 
   // file
   rpc UploadFileInfos (UploadFileInfosInput) returns (google.protobuf.Empty) {}
@@ -253,6 +255,16 @@ message DaoProposalTimePeriod {
   int64 pending_time_period = 3; //day
   int64 execute_time_period = 4; //day
   int64 veto_execute_time_period = 5; //day
+}
+
+message AddHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_high_councils = 2;
+}
+
+message RemoveHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_high_councils = 2;
 }
 
 // log event

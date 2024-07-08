@@ -27,6 +27,52 @@ public partial class DAOContract
         return new Empty();
     }
 
+    public override Empty AddHighCouncilMembers(AddHighCouncilMembersInput input)
+    {
+        Assert(input != null, "Invalid input.");
+        Assert(IsHashValid(input!.DaoId), "Invalid input dao id.");
+        CheckDAOExists(input.DaoId);
+        CheckDaoSubsistStatus(input.DaoId);
+        AssertPermission(input.DaoId, nameof(AddHighCouncilMembers));
+        
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        Assert(daoInfo.GovernanceMechanism != GovernanceMechanism.Organization,
+            "Multi-signature governance cannot add the High Council members.");
+
+        State.ElectionContract.AddHighCouncil.Send(new AddHighCouncilInput
+        {
+            DaoId = input.DaoId,
+            AddHighCouncils = new Election.AddressList()
+            {
+                Value = { input.AddHighCouncils.Value }
+            }
+        });
+        return new Empty();
+    }
+
+    public override Empty RemoveHighCouncilMembers(RemoveHighCouncilMembersInput input)
+    {
+        Assert(input != null, "Invalid input.");
+        Assert(IsHashValid(input!.DaoId), "Invalid input dao id.");
+        CheckDAOExists(input.DaoId);
+        CheckDaoSubsistStatus(input.DaoId);
+        AssertPermission(input.DaoId, nameof(RemoveHighCouncilMembers));
+        
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        Assert(daoInfo.GovernanceMechanism != GovernanceMechanism.Organization,
+            "Multi-signature governance cannot remove the High Council members.");
+        
+        State.ElectionContract.RemoveHighCouncil.Send(new RemoveHighCouncilInput()
+        {
+            DaoId = input.DaoId,
+            RemoveHighCouncils = new Election.AddressList()
+            {
+                Value = { input.RemoveHighCouncils.Value }
+            }
+        });
+        return new Empty();
+    }
+
     private void ProcessEnableHighCouncil(Hash daoId, HighCouncilInput highCouncilInput)
     {
         HighCouncilConfig highCouncilConfig = highCouncilInput.HighCouncilConfig;
