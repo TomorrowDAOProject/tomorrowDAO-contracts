@@ -214,7 +214,7 @@ public partial class GovernanceContract
         var proposalTime = new ProposalTime
         {
             ActiveStartTime = Context.CurrentBlockTime,
-            ActiveEndTime = Context.CurrentBlockTime.AddHours(timePeriod.ActiveTimePeriod)
+            ActiveEndTime = Context.CurrentBlockTime.AddMinutes(timePeriod.ActiveTimePeriod)
         };
         switch (proposalType)
         {
@@ -222,19 +222,19 @@ public partial class GovernanceContract
                 var scheme = GetScheme(proposalBasicInfo.SchemeAddress);
                 if (scheme.GovernanceMechanism == GovernanceMechanism.HighCouncil)
                 {
-                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddHours(timePeriod.PendingTimePeriod);
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddMinutes(timePeriod.PendingTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.ExecuteTimePeriod);
                 }
                 else
                 {
                     proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.ExecuteTimePeriod);
                 }
 
                 break;
             case ProposalType.Veto:
                 proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.VetoExecuteTimePeriod);
+                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.VetoExecuteTimePeriod);
                 break;
             case ProposalType.Advisory:
                 break;
