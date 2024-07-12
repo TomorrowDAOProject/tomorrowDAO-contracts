@@ -16,7 +16,6 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="AElf.Contracts.MultiToken" Version="1.6.0" />
         <PackageReference Include="AElf.Sdk.CSharp" Version="1.6.0" />
         <PackageReference Include="AElf.Tools" Version="1.0.2">
             <PrivateAssets>all</PrivateAssets>
