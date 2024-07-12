@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.RegularExpressions;
 using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.Types;
@@ -44,15 +45,31 @@ public partial class DAOContract
         CheckDaoSubsistStatus(input);
     }
 
-    private bool IsValidTokenChar(char character)
+    private bool IsValidTokenChar(char c)
     {
-        return character >= 'A' && character <= 'Z';
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+    }
+    
+    private bool IsValidItemId(char c)
+    {
+        return c >= '0' && c <= '9';
     }
     
     private TokenInfo AssertToken(string token)
     {
+        //token
         Assert(!string.IsNullOrEmpty(token), "Token is null.");
-        Assert(token!.Length <= DAOContractConstants.SymbolMaxLength && token.All(IsValidTokenChar), "Invalid token symbol.");
+        var words = token!.Split(DAOContractConstants.NFTSymbolSeparator);
+        Assert(words[0].Length > 0 && words[0].All(IsValidTokenChar), "Invalid Symbol input");
+        
+        //NFT
+        if (words.Length > 1)
+        {
+            Assert(words.Length == 2 && words[1].Length > 0 && words[1].All(IsValidItemId), "Invalid NFT Symbol input");
+            //cannot be an NFT Collection
+            Assert(words[1] != DAOContractConstants.CollectionSymbolSuffix, "NFT Collection is not supported.");
+        }
+        
         var tokenInfo = State.TokenContract.GetTokenInfo.Call(new GetTokenInfoInput
         {
             Symbol = token

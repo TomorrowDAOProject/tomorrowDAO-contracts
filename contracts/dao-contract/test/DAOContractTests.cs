@@ -437,10 +437,10 @@ public partial class DAOContractTests : DAOContractTestBase
     }
 
     [Theory]
-    [InlineData("ABCdE", "Invalid token symbol.")]
-    [InlineData("ABCDEFGHIJK", "Invalid token symbol.")]
+    [InlineData("ABCdE", "Token not found.")]
+    [InlineData("ABCDEFGHIJK", "Token not found.")]
     [InlineData("TEST", "Token not found.")]
-    [InlineData("ELF-1", "Invalid token symbol.")]
+    [InlineData("ELF-1", "Token not found.")]
     public async Task CreateDAOTests_GovernanceToken_Fail(string symbol, string errorMessage)
     {
         await InitializeAsync();

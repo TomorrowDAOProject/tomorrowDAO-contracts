@@ -13,7 +13,8 @@ public static class DAOContractConstants
     public const int SocialMediaUrlMaxLength = 64;
 
     // governance token
-    public const int SymbolMaxLength = 10;
+    public const char NFTSymbolSeparator = '-';
+    public const string CollectionSymbolSuffix = "0";
 
     // file
     public const int FileMaxCount = 20;
