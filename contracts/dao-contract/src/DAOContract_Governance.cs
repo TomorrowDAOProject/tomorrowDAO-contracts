@@ -10,13 +10,17 @@ public partial class DAOContract
     {
         Assert(threshold != null, "Invalid input governance scheme threshold.");
 
+        var daoInfo = State.DAOInfoMap[daoId];
+        Assert(daoInfo != null, "Dao information not found.");
+
         var governanceSchemeThreshold = ConvertToGovernanceSchemeThreshold(threshold);
+        governanceSchemeThreshold.ProposalThreshold = daoInfo!.ProposalThreshold;
         State.GovernanceContract.AddGovernanceScheme.Send(new AddGovernanceSchemeInput
         {
             DaoId = daoId,
             GovernanceMechanism = TomorrowDAO.Contracts.Governance.GovernanceMechanism.Referendum,
             SchemeThreshold = governanceSchemeThreshold,
-            GovernanceToken = State.DAOInfoMap[daoId].GovernanceToken,
+            GovernanceToken = daoInfo.GovernanceToken,
         });
 
         State.ReferendumAddressMap[daoId] = State.GovernanceContract.CalculateGovernanceSchemeAddress.Call(
@@ -32,12 +36,16 @@ public partial class DAOContract
         Assert(input is { SchemeThreshold: not null }, "Invalid input.");
         CheckDAOExistsAndSubsist(input.DaoId);
         AssertPermission(input.DaoId, nameof(UpdateGovernanceSchemeThreshold));
+
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        var schemeThreshold = ConvertToGovernanceSchemeThreshold(input.SchemeThreshold);
+        schemeThreshold.ProposalThreshold = daoInfo.ProposalThreshold;
         
         State.GovernanceContract.UpdateGovernanceSchemeThreshold.Send(new Governance.UpdateGovernanceSchemeThresholdInput
         {
             DaoId = input.DaoId,
             SchemeAddress = input.SchemeAddress,
-            SchemeThreshold = ConvertToGovernanceSchemeThreshold(input.SchemeThreshold)
+            SchemeThreshold = schemeThreshold
         });
         return new Empty();
     }
@@ -56,14 +64,16 @@ public partial class DAOContract
         return new Empty();
     }
 
-    // todo can hc support governance token change?
     public override Empty SetGovernanceToken(SetGovernanceTokenInput input)
     {
         Assert(input != null, "Invalid input.");
         CheckDAOExistsAndSubsist(input!.DaoId);
         AssertPermission(input.DaoId, nameof(SetGovernanceToken));
         AssertToken(input.GovernanceToken);
-        State.DAOInfoMap[input.DaoId].GovernanceToken = input.GovernanceToken;
+        var daoInfo = State.DAOInfoMap[input.DaoId];
+        daoInfo.GovernanceToken = input.GovernanceToken;
+        daoInfo.ProposalThreshold = input.ProposalThreshold;
+        State.DAOInfoMap[input.DaoId] = daoInfo;
         
         State.GovernanceContract.SetGovernanceToken.Send(new Governance.SetGovernanceTokenInput
         {

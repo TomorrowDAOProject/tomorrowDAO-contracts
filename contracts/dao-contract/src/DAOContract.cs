@@ -93,7 +93,8 @@ public partial class DAOContract : DAOContractContainer.DAOContractBase
                 VoteContractAddress = State.VoteContract.Value
             },
             IsNetworkDao = input.IsNetworkDao,
-            GovernanceMechanism = (GovernanceMechanism)input.GovernanceMechanism
+            GovernanceMechanism = (GovernanceMechanism)input.GovernanceMechanism,
+            ProposalThreshold = input.ProposalThreshold
         };
 
         State.DAOInfoMap[daoId] = daoInfo;

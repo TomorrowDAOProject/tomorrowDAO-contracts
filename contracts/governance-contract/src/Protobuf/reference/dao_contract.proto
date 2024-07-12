@@ -30,6 +30,8 @@ service DAOContract {
   rpc EnableHighCouncil (EnableHighCouncilInput) returns (google.protobuf.Empty) {}
   rpc DisableHighCouncil (aelf.Hash) returns (google.protobuf.Empty) {}
   rpc GetHighCouncilStatus (aelf.Hash) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc AddHighCouncilMembers (AddHighCouncilMembersInput) returns (google.protobuf.Empty) {}
+  rpc RemoveHighCouncilMembers (RemoveHighCouncilMembersInput) returns (google.protobuf.Empty) {}
 
   // file
   rpc UploadFileInfos (UploadFileInfosInput) returns (google.protobuf.Empty) {}
@@ -57,7 +59,7 @@ service DAOContract {
   rpc AddMember (AddMemberInput) returns (google.protobuf.Empty) {}
   rpc RemoveMember (RemoveMemberInput) returns (google.protobuf.Empty) {}
   rpc GetIsMember (GetIsMemberInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
-  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int32Value) {option (aelf.is_view) = true;}
+  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int64Value) {option (aelf.is_view) = true;}
 }
 
 message InitializeInput {
@@ -78,11 +80,14 @@ message CreateDAOInput {
   bool is_treasury_needed = 7;  // if true, create treasury
   repeated File files = 8;
   bool is_network_dao = 9;
+  int64 proposal_threshold = 10;
 }
 
 message HighCouncilInput {
   HighCouncilConfig high_council_config = 1;  // empty if high council is not enabled
   GovernanceSchemeThreshold governance_scheme_threshold = 2;  // governance scheme threshold for high council
+  AddressList high_council_members = 3;
+  bool is_high_council_election_close = 4;
 }
 
 message Metadata {
@@ -102,7 +107,6 @@ message GovernanceSchemeThreshold {// copy from governance contract
   int64 minimal_approve_threshold = 3;     // percentage
   int64 maximal_rejection_threshold = 4;   // percentage
   int64 maximal_abstention_threshold = 5;  // percentage
-  int64 proposal_threshold = 6;
 }
 
 message HighCouncilConfig {
@@ -157,6 +161,7 @@ message DAOInfo {
   ContractAddressList contract_address_list = 5;
   bool is_network_dao = 6;
   GovernanceMechanism governance_mechanism = 7;
+  int64 proposal_threshold = 8;
 }
 
 message ContractAddressList {
@@ -223,6 +228,7 @@ message RemoveGovernanceSchemeInput {
 message SetGovernanceTokenInput {
   aelf.Hash dao_id = 1;
   string governance_token = 2;
+  int64 proposal_threshold = 3;
 }
 
 message SetProposalTimePeriodInput {
@@ -251,6 +257,16 @@ message DaoProposalTimePeriod {
   int64 pending_time_period = 3; //day
   int64 execute_time_period = 4; //day
   int64 veto_execute_time_period = 5; //day
+}
+
+message AddHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_high_councils = 2;
+}
+
+message RemoveHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_high_councils = 2;
 }
 
 // log event

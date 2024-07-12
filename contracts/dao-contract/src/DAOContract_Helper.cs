@@ -87,7 +87,6 @@ public partial class DAOContract
             MinimalApproveThreshold = input.MinimalApproveThreshold,
             MaximalAbstentionThreshold = input.MaximalAbstentionThreshold,
             MaximalRejectionThreshold = input.MaximalRejectionThreshold,
-            ProposalThreshold = input.ProposalThreshold
         };
     }
     

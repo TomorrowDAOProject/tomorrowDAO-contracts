@@ -75,12 +75,16 @@ public partial class DAOContract
 
     private void ProcessEnableHighCouncil(Hash daoId, HighCouncilInput highCouncilInput)
     {
-        HighCouncilConfig highCouncilConfig = highCouncilInput.HighCouncilConfig;
-        GovernanceSchemeThreshold threshold = highCouncilInput.GovernanceSchemeThreshold;
+        var daoInfo = State.DAOInfoMap[daoId];
+        Assert(daoInfo != null, "Dao information not found.");
+        
+        var highCouncilConfig = highCouncilInput.HighCouncilConfig;
+        var threshold = highCouncilInput.GovernanceSchemeThreshold;
 
         State.HighCouncilEnabledStatusMap[daoId] = true;
 
         var governanceSchemeThreshold = ConvertToGovernanceSchemeThreshold(threshold);
+        governanceSchemeThreshold.ProposalThreshold = daoInfo!.ProposalThreshold;
 
         State.GovernanceContract.AddGovernanceScheme.Send(new AddGovernanceSchemeInput
         {
