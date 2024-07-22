@@ -16,10 +16,13 @@ public partial class TreasuryContract
 
         var referendumAddress = State.DaoContract.GetReferendumAddress.Call(input.DaoId);
         var highCouncilAddress = State.DaoContract.GetHighCouncilAddress.Call(input.DaoId);
-        Assert(Context.Sender == referendumAddress || Context.Sender == highCouncilAddress, "No permission.");
+        var organizationAddress = State.DaoContract.GetOrganizationAddress.Call(input.DaoId);
+        Assert(
+            Context.Sender == referendumAddress || Context.Sender == highCouncilAddress ||
+            Context.Sender == organizationAddress, "No permission.");
 
         TransferFromTreasury(input);
-        
+
         Context.Fire(new TreasuryTransferred
         {
             DaoId = input.DaoId,

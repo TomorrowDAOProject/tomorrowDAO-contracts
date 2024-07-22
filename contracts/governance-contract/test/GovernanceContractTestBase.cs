@@ -24,6 +24,7 @@ public class GovernanceContractTestBase : TestBase
     internal readonly string DefaultGovernanceToken = "ELF";
     internal readonly long OneElfAmount = 100000000;
     internal Hash DefaultDaoId = HashHelper.ComputeFrom("DaoId");
+
     internal readonly GovernanceSchemeThreshold DefaultSchemeThreshold = new GovernanceSchemeThreshold
     {
         MinimalRequiredThreshold = 1,
@@ -100,9 +101,10 @@ public class GovernanceContractTestBase : TestBase
     /// Dependent on the InitializeAllContract method.
     /// </summary>
     /// <returns>DaoId</returns>
-    internal async Task<Hash> MockDao(bool isNetworkDao = false, int governanceMechanism = 0)
+    internal async Task<Hash> MockDao(bool isNetworkDao = false, int governanceMechanism = 0,
+        CreateDAOInput input = null)
     {
-        var result = await DAOContractStub.CreateDAO.SendAsync(new CreateDAOInput
+        var result = await DAOContractStub.CreateDAO.SendAsync(input ?? new CreateDAOInput
         {
             Metadata = new Metadata
             {
@@ -155,6 +157,84 @@ public class GovernanceContractTestBase : TestBase
         return log.DaoId;
     }
 
+    internal CreateDAOInput BuildCreateDaoInput(bool isNetworkDao = false,
+        GovernanceMechanism governanceMechanism = 0)
+    {
+        DAO.GovernanceSchemeThreshold governanceSchemeThreshold = null;
+        HighCouncilInput highCouncilInput = null;
+        DAO.AddressList members = null;
+        if (governanceMechanism == GovernanceMechanism.Organization)
+        {
+            governanceSchemeThreshold = new DAO.GovernanceSchemeThreshold
+            {
+                MinimalRequiredThreshold = 0,
+                MinimalVoteThreshold = 0,
+                MinimalApproveThreshold = 5000,
+                MaximalRejectionThreshold = 0,
+                MaximalAbstentionThreshold = 0
+            };
+            members = new DAO.AddressList() { Value = { DefaultAddress, UserAddress } };
+        }
+        else
+        {
+            governanceSchemeThreshold = new DAO.GovernanceSchemeThreshold
+            {
+                MinimalRequiredThreshold = 1,
+                MinimalVoteThreshold = 100000000,
+                MinimalApproveThreshold = 5000,
+                MaximalRejectionThreshold = 2000,
+                MaximalAbstentionThreshold = 2000
+            };
+            highCouncilInput = new HighCouncilInput
+            {
+                HighCouncilConfig = new HighCouncilConfig
+                {
+                    MaxHighCouncilMemberCount = 2,
+                    MaxHighCouncilCandidateCount = 20,
+                    ElectionPeriod = 7,
+                    StakingAmount = 100000000
+                },
+                GovernanceSchemeThreshold = new DAO.GovernanceSchemeThreshold
+                {
+                    MinimalRequiredThreshold = 1,
+                    MinimalVoteThreshold = 1,
+                    MinimalApproveThreshold = 1,
+                    MaximalRejectionThreshold = 2000,
+                    MaximalAbstentionThreshold = 2000
+                },
+                HighCouncilMembers = new DAO.AddressList() { Value = { DefaultAddress, UserAddress } },
+                IsHighCouncilElectionClose = false
+            };
+        }
+
+        return new CreateDAOInput
+        {
+            Metadata = new Metadata
+            {
+                Name = "DaoName",
+                LogoUrl = "www.logo.com",
+                Description = "Dao Description",
+                SocialMedia =
+                {
+                    new Dictionary<string, string>
+                    {
+                        {
+                            "aa", "bb"
+                        }
+                    }
+                }
+            },
+            GovernanceToken = governanceMechanism == GovernanceMechanism.Organization ? string.Empty : "ELF",
+            GovernanceSchemeThreshold = governanceSchemeThreshold,
+            HighCouncilInput = highCouncilInput,
+            IsTreasuryNeeded = false,
+            IsNetworkDao = isNetworkDao,
+            ProposalThreshold = 0,
+            GovernanceMechanism = (int)governanceMechanism,
+            Members = members
+        };
+    }
+
     #endregion
 
     #region Proposal
@@ -167,6 +247,7 @@ public class GovernanceContractTestBase : TestBase
     /// <param name="voteMechanism"></param>
     /// <param name="governanceMechanism"></param>
     /// <returns></returns>
+    [Obsolete]
     internal async Task<IExecutionResult<Hash>> CreateProposalAsync(CreateProposalInput input, bool withException,
         VoteMechanism voteMechanism = VoteMechanism.UniqueVote, int governanceMechanism = 0)
     {
@@ -183,6 +264,45 @@ public class GovernanceContractTestBase : TestBase
         input.ProposalBasicInfo.SchemeAddress = schemeAddress;
         input.ProposalBasicInfo.VoteSchemeId = voteMechanismId;
 
+        return withException
+            ? await GovernanceContractStub.CreateProposal.SendWithExceptionAsync(input)
+            : await GovernanceContractStub.CreateProposal.SendAsync(input);
+    }
+
+    internal async Task<IExecutionResult<Hash>> CreateProposalAsync(CreateProposalInput input, bool withException,
+        GovernanceMechanism governanceMechanism = GovernanceMechanism.Referendum,
+        VoteMechanism voteMechanism = VoteMechanism.UniqueVote,
+        Func<Task<Hash>> buildDaoFunc = null,
+        Func<Task> buildVoteMechanismFunc = null)
+    {
+        await InitializeAllContract();
+
+        buildDaoFunc ??= async () =>
+        {
+            var daoId = await MockDao();
+            return daoId;
+        };
+        var daoId = await buildDaoFunc();
+
+        var addressList = await GovernanceContractStub.GetDaoGovernanceSchemeAddressList.CallAsync(daoId);
+        addressList.ShouldNotBeNull();
+
+        var schemeAddress = governanceMechanism switch
+        {
+            GovernanceMechanism.Referendum => await DAOContractStub.GetReferendumAddress.CallAsync(daoId),
+            GovernanceMechanism.Organization => await DAOContractStub.GetOrganizationAddress.CallAsync(daoId),
+            GovernanceMechanism.HighCouncil => await DAOContractStub.GetHighCouncilAddress.CallAsync(daoId),
+            _ => null
+        };
+        schemeAddress.ShouldNotBeNull();
+
+        buildVoteMechanismFunc ??= async () => { await MockVoteScheme(); };
+        await buildVoteMechanismFunc();
+        var voteMechanismId = await GetVoteSchemeId(voteMechanism);
+
+        input.ProposalBasicInfo.DaoId = daoId;
+        input.ProposalBasicInfo.SchemeAddress = schemeAddress;
+        input.ProposalBasicInfo.VoteSchemeId = voteMechanismId;
         return withException
             ? await GovernanceContractStub.CreateProposal.SendWithExceptionAsync(input)
             : await GovernanceContractStub.CreateProposal.SendAsync(input);
@@ -255,7 +375,7 @@ public class GovernanceContractTestBase : TestBase
 
     #region Vote
 
-    protected async Task<Hash> MockVoteScheme()
+    internal async Task<Hash> MockVoteScheme()
     {
         await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
@@ -279,7 +399,7 @@ public class GovernanceContractTestBase : TestBase
         return HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(VoteContractAddress),
             HashHelper.ComputeFrom(voteMechanism.ToString()));
     }
-    
+
     internal async Task<IExecutionResult<Empty>> VoteProposalAsync(Hash proposalId, long amount, VoteOption voteOption)
     {
         await TokenContractStub.Approve.SendAsync(new ApproveInput
@@ -296,7 +416,7 @@ public class GovernanceContractTestBase : TestBase
             VoteAmount = amount
         });
     }
-    
+
     internal async Task<IExecutionResult<Hash>> CreateVetoProposalAsync(CreateVetoProposalInput input,
         bool withException)
     {
@@ -325,7 +445,7 @@ public class GovernanceContractTestBase : TestBase
         string governanceToken = null)
     {
         await Initialize(DefaultAddress);
-        
+
         var input = new AddGovernanceSchemeInput
         {
             DaoId = daoId ?? DefaultDaoId,
@@ -338,7 +458,7 @@ public class GovernanceContractTestBase : TestBase
         return executionResult.Output;
     }
 
-    internal CreateProposalInput MockCreateProposalInput()
+    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
@@ -347,7 +467,8 @@ public class GovernanceContractTestBase : TestBase
             ProposalDescription = "ProposalDescription",
             ForumUrl = "https://www.ForumUrl.com",
             SchemeAddress = null,
-            VoteSchemeId = null
+            VoteSchemeId = null,
+            ActiveTimePeriod = activeTimePeriod
         };
         var executeTransaction = new ExecuteTransaction
         {
@@ -364,8 +485,8 @@ public class GovernanceContractTestBase : TestBase
         };
         return input;
     }
-    
-    internal CreateVetoProposalInput MockCreateVetoProposalInput()
+
+    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
@@ -374,7 +495,8 @@ public class GovernanceContractTestBase : TestBase
             ProposalDescription = "VetoProposalDescription",
             ForumUrl = "https://www.ForumUrl.com",
             SchemeAddress = null,
-            VoteSchemeId = null
+            VoteSchemeId = null,
+            ActiveTimePeriod = activeTimePeriod
         };
         var proposalInput = new CreateVetoProposalInput
         {

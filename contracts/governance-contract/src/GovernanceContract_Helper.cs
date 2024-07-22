@@ -19,6 +19,7 @@ public partial class GovernanceContract
         {
             return;
         }
+
         var tokenBalance = State.TokenContract.GetBalance.Call(new GetBalanceInput
         {
             Owner = owner,
@@ -63,22 +64,16 @@ public partial class GovernanceContract
         };
     }
 
-    private bool ValidateSchemeInfo(GovernanceSchemeHashAddressPair scheme, AddGovernanceSchemeInput input)
+    private bool ValidateSchemeInfo(AddGovernanceSchemeInput input)
     {
-        if (scheme.SchemeAddress == null || scheme.SchemeId == null || State.GovernanceSchemeMap[scheme.SchemeAddress] != null)
-        {
-            return false;
-        }
         var threshold = input.SchemeThreshold;
-        var governanceMechanism = input.GovernanceMechanism;
-        return governanceMechanism == GovernanceMechanism.Organization ? 
-            ValidateOrganizationGovernanceSchemeThreshold(threshold) :
-            ValidateGovernanceSchemeThreshold(threshold);
+        return ValidateBaseGovernanceSchemeThreshold(threshold);
     }
 
     private bool ValidateBaseGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
     {
-        return threshold.MinimalRequiredThreshold > 0 &&
+        return threshold.MinimalVoteThreshold >= 0 &&
+               threshold.MinimalRequiredThreshold >= 0 &&
                threshold.MinimalApproveThreshold >= 0 &&
                threshold.MaximalAbstentionThreshold >= 0 &&
                threshold.MaximalRejectionThreshold >= 0 &&
@@ -89,31 +84,21 @@ public partial class GovernanceContract
                threshold.ProposalThreshold >= 0;
     }
 
-    private bool ValidateOrganizationGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
-    {
-        return threshold.MinimalVoteThreshold == 0 && // Organization dao do not check mon vote count
-               ValidateBaseGovernanceSchemeThreshold(threshold);
-    }
-
-    private bool ValidateGovernanceSchemeThreshold(GovernanceSchemeThreshold threshold)
-    {
-        return threshold.MinimalVoteThreshold >= 0 &&
-               ValidateBaseGovernanceSchemeThreshold(threshold);
-    }
-
     private void AssertVoteMechanism(GovernanceMechanism governanceMechanism, Hash voteSchemeId)
     {
         var voteScheme = State.VoteContract.GetVoteScheme.Call(voteSchemeId);
         var voteMechanism = voteScheme.VoteMechanism;
-        Assert(GovernanceMechanism.Organization == governanceMechanism ? 
-            VoteMechanism.UniqueVote == voteMechanism : 
-            VoteMechanism.TokenBallot == voteMechanism, "Invalid voteSchemeId.");
+        Assert(
+            GovernanceMechanism.Organization == governanceMechanism
+                ? VoteMechanism.UniqueVote == voteMechanism
+                : VoteMechanism.TokenBallot == voteMechanism, "Invalid voteSchemeId.");
     }
 
     private void AssertProposer(GovernanceMechanism governanceMechanism, Address proposer, Hash daoId)
     {
         if (GovernanceMechanism.Organization != governanceMechanism) return;
-        var isProposer = State.DaoContract.GetIsMember.Call(new GetIsMemberInput { DaoId = daoId, Member = proposer }).Value;
+        var isProposer = State.DaoContract.GetIsMember.Call(new GetIsMemberInput { DaoId = daoId, Member = proposer })
+            .Value;
         Assert(isProposer, "Invalid proposer.");
     }
 
@@ -169,14 +154,15 @@ public partial class GovernanceContract
             Symbol = symbol,
             Owner = treasuryAddress
         });
-        Assert(getBalanceOutput != null && getBalanceOutput.Balance >= amount, "The Treasury has insufficient available funds.");
+        Assert(getBalanceOutput != null && getBalanceOutput.Balance >= amount,
+            "The Treasury has insufficient available funds.");
         return daoInfo;
-    } 
+    }
 
     private int CallAndCheckHighCouncilCount(Hash daoId)
     {
         var addressList = State.ElectionContract.GetHighCouncilMembers.Call(daoId);
-        // todo temporary use int.MaxValue to make hc can not approve
+        //HC has not been initialized, and a maximum number is returned, making the proposal not pass
         // Assert(addressList != null && addressList.Value.Count > 0,
         //     "The 'High Council' elections have not taken place yet.");
         var count = addressList?.Value.Count ?? 0;
@@ -189,7 +175,7 @@ public partial class GovernanceContract
         Assert(minerList != null && minerList.Pubkeys.Count > 0, "Invalid BP Count.");
         return minerList!.Pubkeys.Count;
     }
-    
+
     private long CallAndCheckMemberCount(Hash daoId)
     {
         var result = State.DaoContract.GetMemberCount.Call(daoId).Value;
@@ -208,14 +194,24 @@ public partial class GovernanceContract
         };
     }
 
-    private ProposalTime GetProposalTimePeriod(ProposalBasicInfo proposalBasicInfo, ProposalType proposalType)
+    private ProposalTime GetProposalTime(ProposalBasicInfo proposalBasicInfo, ProposalType proposalType)
     {
-        var timePeriod = GetDaoProposalTimePeriod(proposalBasicInfo.DaoId);
-        var proposalTime = new ProposalTime
+        var timePeriod = GetProposalTimePeriod(proposalBasicInfo, proposalType);
+        var proposalTime = new ProposalTime();
+        switch (proposalType)
         {
-            ActiveStartTime = Context.CurrentBlockTime,
-            ActiveEndTime = Context.CurrentBlockTime.AddDays(timePeriod.ActiveTimePeriod)
-        };
+            case ProposalType.Veto:
+                proposalTime.ActiveStartTime = Context.CurrentBlockTime;
+                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddDays(timePeriod.VetoActiveTimePeriod);
+                break;
+            case ProposalType.Governance:
+            case ProposalType.Advisory:
+            default:
+                proposalTime.ActiveStartTime = Context.CurrentBlockTime;
+                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddDays(timePeriod.ActiveTimePeriod);
+                break;
+        }
+
         switch (proposalType)
         {
             case ProposalType.Governance:
@@ -246,54 +242,22 @@ public partial class GovernanceContract
         return proposalTime;
     }
 
-    private bool ValidateProposalTimePeriod(ProposalInfo proposal)
+    private DaoProposalTimePeriod GetProposalTimePeriod(ProposalBasicInfo proposalBasicInfo, ProposalType proposalType)
     {
-        bool result;
-        var timePeriod = GetDaoProposalTimePeriod(proposal.ProposalBasicInfo.DaoId);
-        var proposalTime = proposal.ProposalTime;
-        switch (proposal.ProposalType)
+        var timePeriod = GetDaoProposalTimePeriod(proposalBasicInfo.DaoId);
+        
+        if (proposalBasicInfo.ActiveTimePeriod <= 0) return timePeriod;
+        
+        if (proposalType == ProposalType.Veto)
         {
-            case ProposalType.Governance:
-            {
-                AssertParams(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime, proposalTime.ExecuteStartTime,
-                    proposalTime.ExecuteEndTime);
-                var scheme = GetScheme(proposal.ProposalBasicInfo.SchemeAddress);
-                result = ValidateTime(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime,
-                    timePeriod.ActiveTimePeriod);
-                if (scheme.GovernanceMechanism == GovernanceMechanism.HighCouncil)
-                {
-                    result = result && ValidateTime(proposalTime.ActiveEndTime, proposalTime.ExecuteStartTime,
-                        timePeriod.PendingTimePeriod);
-                }
-
-                result = result && ValidateTime(proposalTime.ExecuteStartTime, proposalTime.ExecuteEndTime,
-                    timePeriod.ExecuteTimePeriod);
-                break;
-            }
-            case ProposalType.Veto:
-                AssertParams(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime, proposalTime.ExecuteStartTime,
-                    proposalTime.ExecuteEndTime);
-                result = ValidateTime(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime,
-                             timePeriod.VetoActiveTimePeriod) &&
-                         ValidateTime(proposalTime.ExecuteStartTime, proposalTime.ExecuteEndTime,
-                             timePeriod.VetoExecuteTimePeriod);
-                break;
-            case ProposalType.Advisory:
-                AssertParams(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime);
-                result = ValidateTime(proposalTime.ActiveStartTime, proposalTime.ActiveEndTime,
-                    timePeriod.ActiveTimePeriod);
-                break;
-            case ProposalType.Unused:
-            default:
-                throw new AssertionException("Invalid proposal type.");
+            timePeriod.VetoActiveTimePeriod = proposalBasicInfo.ActiveTimePeriod;
+        }
+        else
+        {
+            timePeriod.ActiveTimePeriod = proposalBasicInfo.ActiveTimePeriod;
         }
 
-        return result;
-    }
-
-    private bool ValidateTime(Timestamp startTime, Timestamp targetTime, long period)
-    {
-        return startTime.AddDays(period).ToDateTime().Day == targetTime.ToDateTime().Day;
+        return timePeriod;
     }
 
     #endregion

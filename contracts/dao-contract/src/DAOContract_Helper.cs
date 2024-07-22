@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Text.RegularExpressions;
 using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.Types;
@@ -89,20 +88,7 @@ public partial class DAOContract
             MaximalRejectionThreshold = input.MaximalRejectionThreshold,
         };
     }
-    
-    private Governance.GovernanceSchemeThreshold ConvertToOrganizationGovernanceSchemeThreshold(GovernanceSchemeThreshold input)
-    {
-        return new Governance.GovernanceSchemeThreshold
-        {
-            MinimalVoteThreshold = 0,
-            MinimalRequiredThreshold = input.MinimalRequiredThreshold,
-            MinimalApproveThreshold = input.MinimalApproveThreshold,
-            MaximalAbstentionThreshold = input.MaximalAbstentionThreshold,
-            MaximalRejectionThreshold = input.MaximalRejectionThreshold,
-            ProposalThreshold = 0
-        };
-    }
-    
+
     private Governance.DaoProposalTimePeriod ConvertToProposalTimePeriod(DaoProposalTimePeriod input)
     {
         return new Governance.DaoProposalTimePeriod

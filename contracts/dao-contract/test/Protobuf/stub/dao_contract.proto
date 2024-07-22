@@ -25,6 +25,7 @@ service DAOContract {
   rpc GetInitializedContracts (google.protobuf.Empty) returns (ContractAddressList) {option (aelf.is_view) = true;}
   rpc GetReferendumAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
   rpc GetHighCouncilAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+  rpc GetOrganizationAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
 
   // high council
   rpc EnableHighCouncil (EnableHighCouncilInput) returns (google.protobuf.Empty) {}
@@ -101,7 +102,7 @@ message SocialMediaList {
   repeated string data = 1;
 }
 
-message GovernanceSchemeThreshold {// copy from governance contract
+message GovernanceSchemeThreshold {
   int64 minimal_required_threshold = 1;
   int64 minimal_vote_threshold = 2;
   int64 minimal_approve_threshold = 3;     // percentage

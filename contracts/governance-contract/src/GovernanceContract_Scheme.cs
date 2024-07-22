@@ -1,9 +1,5 @@
-using System;
-using System.Linq;
-using AElf;
 using AElf.Sdk.CSharp;
 using AElf.Types;
-using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 
 namespace TomorrowDAO.Contracts.Governance
@@ -17,7 +13,8 @@ namespace TomorrowDAO.Contracts.Governance
             Assert(Context.Sender == State.DaoContract.Value, "No permission.");
             AssertParams(input.DaoId, input.GovernanceMechanism, input.SchemeThreshold);
             var schemePair = CalculateGovernanceSchemeHashAddressPair(input.DaoId, input.GovernanceMechanism);
-            Assert(ValidateSchemeInfo(schemePair, input), "Scheme already exist or invalid threshold.");
+            Assert(State.GovernanceSchemeMap[schemePair.SchemeAddress] == null, "Scheme already exist.");
+            Assert(ValidateSchemeInfo(input), "Scheme already exist or invalid threshold.");
             var scheme = new GovernanceScheme
             {
                 SchemeId = schemePair.SchemeId,
@@ -56,7 +53,7 @@ namespace TomorrowDAO.Contracts.Governance
             Assert(ValidateDaoSubsistStatus(input.DaoId), "DAO not subsist. ");
             var scheme = State.GovernanceSchemeMap[input.SchemeAddress];
             Assert(scheme != null, "Scheme not found.");
-            Assert(ValidateGovernanceSchemeThreshold(input.SchemeThreshold), "Invalid threshold.");
+            Assert(ValidateBaseGovernanceSchemeThreshold(input.SchemeThreshold), "Invalid threshold.");
             scheme.SchemeThreshold = input.SchemeThreshold;
             State.GovernanceSchemeMap[input.SchemeAddress] = scheme;
             Context.Fire(new GovernanceSchemeThresholdUpdated

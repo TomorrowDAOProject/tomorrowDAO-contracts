@@ -26,12 +26,12 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         result.ShouldNotBeNull();
         _testOutputHelper.WriteLine("ProposalId = {0}", result);
     }
-    
+
     [Fact]
     public async Task CreateProposalTest_InvalidVoteSchemeId()
     {
         var input = MockCreateProposalInput();
-        var result = await CreateProposalAsync(input, true);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.UniqueVote);
         result.ShouldNotBeNull();
         result.TransactionResult.Error.ShouldContain("Invalid voteSchemeId.");
         _testOutputHelper.WriteLine("ProposalId = {0}", result);
@@ -93,5 +93,73 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         var executionResult = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         _testOutputHelper.WriteLine(executionResult.TransactionResult.Error);
         executionResult.TransactionResult.Error.ShouldContain("Invalid input or parameter does not exist");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_MultisigDao()
+    {
+        var input = MockCreateProposalInput(1);
+        var executionResult =
+            await CreateProposalAsync(input, false,
+                GovernanceMechanism.Organization,
+                VoteMechanism.UniqueVote,
+                buildDaoFunc: async () =>
+                {
+                    var createDaoInput = BuildCreateDaoInput(isNetworkDao: false,
+                        governanceMechanism: GovernanceMechanism.Organization);
+                    createDaoInput.Members.Value.Remove(UserAddress);
+                    var daoId = await MockDao(input: createDaoInput);
+                    return daoId;
+                });
+        var proposalId = executionResult.Output;
+        
+        //Vote 10s
+        BlockTimeProvider.SetBlockTime(10000);
+        await VoteProposalAsync(proposalId, 1, VoteOption.Approved);
+        var output = await GovernanceContractStub.GetProposalStatus.CallAsync(proposalId);
+        output.ShouldNotBeNull();
+        output.ProposalStage.ShouldBe(ProposalStage.Active);
+        output.ProposalStatus.ShouldBe(ProposalStatus.PendingVote);
+        
+        //Vote 1d
+        BlockTimeProvider.SetBlockTime(24 * 3600 * 1000);
+        output = await GovernanceContractStub.GetProposalStatus.CallAsync(proposalId);
+        output.ShouldNotBeNull();
+        output.ProposalStage.ShouldBe(ProposalStage.Execute);
+        output.ProposalStatus.ShouldBe(ProposalStatus.Approved);
+    }
+
+    [Fact]
+    public async Task CreateProposalTest_MultisigDao_BelowThreshold()
+    {
+        var input = MockCreateProposalInput(1);
+        var executionResult =
+            await CreateProposalAsync(input, false,
+                GovernanceMechanism.Organization,
+                VoteMechanism.UniqueVote,
+                buildDaoFunc: async () =>
+                {
+                    var createDaoInput = BuildCreateDaoInput(isNetworkDao: false,
+                        governanceMechanism: GovernanceMechanism.Organization);
+                    createDaoInput.GovernanceSchemeThreshold.MinimalRequiredThreshold = 0;
+                        var daoId = await MockDao(input: createDaoInput);
+                    return daoId;
+                });
+        var proposalId = executionResult.Output;
+        
+        //Vote 10s
+        BlockTimeProvider.SetBlockTime(10000);
+        await VoteProposalAsync(proposalId, 1, VoteOption.Approved);
+        var output = await GovernanceContractStub.GetProposalStatus.CallAsync(proposalId);
+        output.ShouldNotBeNull();
+        output.ProposalStage.ShouldBe(ProposalStage.Active);
+        output.ProposalStatus.ShouldBe(ProposalStatus.PendingVote);
+        
+        //Vote 1d
+        BlockTimeProvider.SetBlockTime(24 * 3600 * 1000);
+        output = await GovernanceContractStub.GetProposalStatus.CallAsync(proposalId);
+        output.ShouldNotBeNull();
+        output.ProposalStage.ShouldBe(ProposalStage.Finished);
+        output.ProposalStatus.ShouldBe(ProposalStatus.BelowThreshold);
     }
 }

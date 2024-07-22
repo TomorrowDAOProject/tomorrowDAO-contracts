@@ -17,7 +17,7 @@ public partial class DAOContract
     {
         Assert(threshold != null, "Invalid input governance scheme threshold.");
 
-        var governanceSchemeThreshold = ConvertToOrganizationGovernanceSchemeThreshold(threshold);
+        var governanceSchemeThreshold = ConvertToGovernanceSchemeThreshold(threshold);
         State.GovernanceContract.AddGovernanceScheme.Send(new AddGovernanceSchemeInput
         {
             DaoId = daoId,
