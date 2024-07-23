@@ -17,6 +17,8 @@ service GovernanceContract {
 
   rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {
   }
+  rpc SetTokenContract (google.protobuf.Empty) returns (google.protobuf.Empty) {
+  }
 
   // Governance scheme
   rpc AddGovernanceScheme (AddGovernanceSchemeInput) returns (aelf.Address){
@@ -45,11 +47,11 @@ service GovernanceContract {
   }
   rpc CreateVetoProposal (CreateVetoProposalInput) returns (aelf.Hash){
   }
+  rpc CreateTransferProposal (CreateTransferProposalInput) returns (aelf.Hash){
+  }
   rpc VetoProposal (VetoProposalInput) returns (google.protobuf.Empty){
   }
   rpc ExecuteProposal (aelf.Hash) returns (google.protobuf.Empty) {
-  }
-  rpc ClearProposal (aelf.Hash) returns (google.protobuf.Empty) {
   }
   rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {
   }
@@ -85,13 +87,16 @@ message GovernanceSchemeList {
 enum GovernanceMechanism {
   REFERENDUM = 0;
   HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
 }
 message GovernanceSchemeThreshold {
-  int64 minimal_required_threshold = 1; //HighCouncil -> percentage / referendum -> number
+  //HighCouncil -> percentage / referendum -> number
+  int64 minimal_required_threshold = 1; 
   int64 minimal_vote_threshold = 2;
   int64 minimal_approve_threshold = 3; // percentage
   int64 maximal_rejection_threshold = 4; // percentage
   int64 maximal_abstention_threshold = 5; // percentage
+  int64 proposal_threshold = 6;
 }
 message AddressList {
   repeated aelf.Address value = 1;
@@ -110,7 +115,8 @@ message ProposalInfo {
   ProposalStage proposal_stage = 6;
   aelf.Address proposer = 7;
   ExecuteTransaction transaction = 8;
-  aelf.Hash veto_proposal_id = 9;// for veto proposal
+  // for veto proposal
+  aelf.Hash veto_proposal_id = 9;
   string forum_url = 10;
 }
 
@@ -121,6 +127,7 @@ message ProposalBasicInfo {
   string forum_url = 4;
   aelf.Address scheme_address = 5;
   aelf.Hash vote_scheme_id = 6;
+  int64 active_time_period = 7; //day
 }
 
 message ProposalTime {
@@ -206,11 +213,20 @@ message CreateProposalInput {
   ProposalBasicInfo proposal_basic_info = 1;
   int32 proposal_type = 2;
   ExecuteTransaction transaction = 3;
+  aelf.Hash token = 4;
 }
 
 message CreateVetoProposalInput {
   ProposalBasicInfo proposal_basic_info = 1;
   aelf.Hash veto_proposal_id = 2;
+}
+
+message CreateTransferProposalInput {
+  ProposalBasicInfo proposal_basic_info = 1;
+  string symbol = 2;
+  int64 amount = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
 }
 
 message SetProposalTimePeriodInput {
@@ -303,6 +319,7 @@ message ProposalCreated {
   ExecuteTransaction transaction = 15;
   aelf.Hash vote_scheme_id = 16;
   aelf.Hash veto_proposal_id = 17;
+  int64 active_time_period = 18;
 }
 message ProposalVetoed {
   option (aelf.is_event) = true;

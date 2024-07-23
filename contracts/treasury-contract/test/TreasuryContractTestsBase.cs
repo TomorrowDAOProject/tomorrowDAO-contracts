@@ -22,19 +22,21 @@ namespace TomorrowDAO.Contracts.Treasury;
 // This class is unit test class, and it inherit TestBase. Write your unit test code inside it
 public class TreasuryContractTestsBase : TestBase
 {
+    protected const string DefaultGovernanceToken = "ELF";
+    protected const long OneElfAmount = 100000000;
+    public const long ActiveTimePeriod = 7;
+    
     internal IBlockTimeProvider BlockTimeProvider;
-    internal readonly string DefaultGovernanceToken = "ELF";
-    internal readonly long OneElfAmount = 100000000;
     internal Hash DefaultDaoId = HashHelper.ComputeFrom("DaoId");
 
-    internal readonly TomorrowDAO.Contracts.Governance.GovernanceSchemeThreshold DefaultSchemeThreshold =
-        new TomorrowDAO.Contracts.Governance.GovernanceSchemeThreshold
+    internal readonly Governance.GovernanceSchemeThreshold DefaultSchemeThreshold =
+        new Governance.GovernanceSchemeThreshold
         {
             MinimalRequiredThreshold = 1,
             MinimalVoteThreshold = 1,
             MinimalApproveThreshold = 1,
             MaximalRejectionThreshold = 2,
-            MaximalAbstentionThreshold = 2
+            MaximalAbstentionThreshold = 2,
         };
 
     public TreasuryContractTestsBase()
@@ -398,7 +400,8 @@ public class TreasuryContractTestsBase : TestBase
                 ProposalDescription = "ProposalDescription",
                 ForumUrl = "http://121.id",
                 SchemeAddress = schemeAddress,
-                VoteSchemeId = voteMechanismId
+                VoteSchemeId = voteMechanismId,
+                ActiveTimePeriod = ActiveTimePeriod 
             }
         });
 
