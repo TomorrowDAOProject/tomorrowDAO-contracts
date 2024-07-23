@@ -26,6 +26,8 @@ public class DAOContractTestBase : TestBase
     
     public const int UniqueVoteVoteAmount = 1;
     public const long OneElf = 1_00000000;
+    public const long ActiveTimePeriod = 7; //day
+    public const long VetoActiveTimePeriod = 3; //day
     protected Hash UniqueVoteVoteSchemeId; //1a1v
     protected Hash TokenBallotVoteSchemeId; //1t1v
     protected string TokenElf = "ELF";
@@ -389,7 +391,8 @@ public class DAOContractTestBase : TestBase
                 ProposalDescription = "ProposalDescription",
                 ForumUrl = "https://www.ForumUrl.com",
                 SchemeAddress = schemeAddress,
-                VoteSchemeId = voteSchemeId
+                VoteSchemeId = voteSchemeId,
+                ActiveTimePeriod = ActiveTimePeriod
             },
             ProposalType = (int)proposalType,
             Transaction = new ExecuteTransaction

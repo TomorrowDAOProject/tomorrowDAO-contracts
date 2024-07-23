@@ -17,8 +17,8 @@ namespace TomorrowDAO.Contracts.DAO;
 
 public partial class DAOContractTests
 {
-    protected readonly string DefaultGovernanceToken = "ELF";
-    protected readonly long OneElfAmount = 100000000;
+    public const string DefaultGovernanceToken = "ELF";
+    public const long OneElfAmount = 100000000;
 
     private T GetLogEvent<T>(TransactionResult transactionResult) where T : IEvent<T>, new()
     {
@@ -268,7 +268,8 @@ public partial class DAOContractTests
             ProposalDescription = "ProposalDescription",
             ForumUrl = "https://www.ForumUrl.com",
             SchemeAddress = null,
-            VoteSchemeId = null
+            VoteSchemeId = null,
+            ActiveTimePeriod = ActiveTimePeriod
         };
 
         var input = new CreateProposalInput
