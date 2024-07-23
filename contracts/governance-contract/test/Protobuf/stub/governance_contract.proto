@@ -53,8 +53,6 @@ service GovernanceContract {
   }
   rpc ExecuteProposal (aelf.Hash) returns (google.protobuf.Empty) {
   }
-  rpc ClearProposal (aelf.Hash) returns (google.protobuf.Empty) {
-  }
   rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {
   }
 
@@ -92,7 +90,8 @@ enum GovernanceMechanism {
   ORGANIZATION = 2;
 }
 message GovernanceSchemeThreshold {
-  int64 minimal_required_threshold = 1; //HighCouncil -> percentage / referendum -> number
+  //HighCouncil -> percentage / referendum -> number
+  int64 minimal_required_threshold = 1; 
   int64 minimal_vote_threshold = 2;
   int64 minimal_approve_threshold = 3; // percentage
   int64 maximal_rejection_threshold = 4; // percentage
@@ -116,7 +115,8 @@ message ProposalInfo {
   ProposalStage proposal_stage = 6;
   aelf.Address proposer = 7;
   ExecuteTransaction transaction = 8;
-  aelf.Hash veto_proposal_id = 9;// for veto proposal
+  // for veto proposal
+  aelf.Hash veto_proposal_id = 9;
   string forum_url = 10;
 }
 
@@ -127,6 +127,7 @@ message ProposalBasicInfo {
   string forum_url = 4;
   aelf.Address scheme_address = 5;
   aelf.Hash vote_scheme_id = 6;
+  int64 active_time_period = 7; //day
 }
 
 message ProposalTime {
@@ -318,6 +319,7 @@ message ProposalCreated {
   ExecuteTransaction transaction = 15;
   aelf.Hash vote_scheme_id = 16;
   aelf.Hash veto_proposal_id = 17;
+  int64 active_time_period = 18;
 }
 message ProposalVetoed {
   option (aelf.is_event) = true;

@@ -93,6 +93,11 @@ public partial class DAOContract
     {
         return State.ReferendumAddressMap[input];
     }
+    
+    public override Address GetOrganizationAddress(Hash input)
+    {
+        return State.OrganizationAddressMap[input];
+    }
 
     public override Address GetTreasuryAddress(Hash input)
     {

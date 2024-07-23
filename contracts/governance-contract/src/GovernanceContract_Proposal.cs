@@ -96,16 +96,20 @@ public partial class GovernanceContract
         Assert(State.Initialized.Value, "Not initialized yet.");
         AssertParams(proposalBasicInfo, proposalBasicInfo.DaoId, proposalBasicInfo.VoteSchemeId,
             proposalBasicInfo.SchemeAddress);
-
         Assert(
             proposalBasicInfo.ProposalDescription.Length <=
             GovernanceContractConstants.MaxProposalDescriptionUrlLength && ValidateForumUrl(proposalBasicInfo.ForumUrl),
             "Invalid proposal description or forum url.");
+        
+        AssertNumberInRange(proposalBasicInfo.ActiveTimePeriod, GovernanceContractConstants.MinActiveTimePeriod,
+            GovernanceContractConstants.MaxActiveTimePeriod, "ProposalBasicInfo.ActiveTimePeriod");
+        
         scheme = State.GovernanceSchemeMap[proposalBasicInfo.SchemeAddress];
         var schemeAddressList = State.DaoSchemeAddressList[proposalBasicInfo.DaoId];
         Assert(
             scheme != null && schemeAddressList != null && schemeAddressList.Value.Count > 0 &&
             schemeAddressList.Value.Contains(proposalBasicInfo.SchemeAddress), "Invalid scheme address.");
+        
         AssertTokenBalance(Context.Sender, scheme!.GovernanceToken, scheme.SchemeThreshold.ProposalThreshold);
         AssertVoteMechanism(scheme.GovernanceMechanism, proposalBasicInfo.VoteSchemeId);
         AssertProposer(scheme.GovernanceMechanism, Context.Sender, proposalBasicInfo.DaoId);
@@ -135,7 +139,7 @@ public partial class GovernanceContract
             ProposalBasicInfo = proposalBasicInfo,
             ProposalId = proposalId,
             ProposalType = proposalType,
-            ProposalTime = GetProposalTimePeriod(proposalBasicInfo, proposalType),
+            ProposalTime = GetProposalTime(proposalBasicInfo, proposalType),
             ProposalStatus = ProposalStatus.PendingVote,
             ProposalStage = ProposalStage.Active,
             Proposer = Context.Sender,
@@ -194,7 +198,9 @@ public partial class GovernanceContract
             Transaction = proposal.Transaction,
             Proposer = proposal.Proposer,
             VetoProposalId = proposal.VetoProposalId,
+            ActiveTimePeriod = basicInfo.ActiveTimePeriod,
             ForumUrl = proposal.ForumUrl
+
         });
     }
 
@@ -270,7 +276,8 @@ public partial class GovernanceContract
         });
     }
 
-    public override ProposalStatusOutput GetProposalStatus(Hash input)
+    public override ProposalStatusOutput 
+        GetProposalStatus(Hash input)
     {
         Assert(input != null && input != Hash.Empty, "Invalid input.");
         var proposal = State.Proposals[input];
@@ -284,7 +291,7 @@ public partial class GovernanceContract
         var proposalTime = proposalInfo.ProposalTime;
         if (proposalStage == ProposalStage.Active && Context.CurrentBlockTime < proposalTime.ActiveEndTime)
         {
-            return CreateProposalStatusOutput(proposalInfo.ProposalStatus, proposalInfo.ProposalStage);
+            return CreateProposalStatusOutput(proposalStatus, proposalStage);
         }
 
         var proposalStatusOutput = GetProposalVotedStatus(proposalInfo);
@@ -311,18 +318,18 @@ public partial class GovernanceContract
         var threshold = State.ProposalGovernanceSchemeSnapShot[proposalInfo.ProposalId];
         Assert(threshold != null, "GovernanceSchemeThreshold not exists.");
         var votingResult = State.VoteContract.GetVotingResult.Call(proposalInfo.ProposalId);
-        var totalVote = votingResult.VotesAmount;
         var approveVote = votingResult.ApproveCounts;
         var rejectVote = votingResult.RejectCounts;
         var abstainVote = votingResult.AbstainCounts;
         var totalVoter = votingResult.TotalVotersCount;
+        //Minimum participation rate
         var enoughVoter = totalVoter >= GetRealMinimalRequiredThreshold(proposalInfo, threshold);
         if (!enoughVoter)
         {
             return CreateProposalStatusOutput(ProposalStatus.BelowThreshold, ProposalStage.Finished);
         }
 
-        //the proposal of 1a1v is not subject to this control
+        //Minimal vote threshold, the proposal of 1a1v is not subject to this control
         var voteSchemeId = proposalInfo.ProposalBasicInfo.VoteSchemeId;
         var voteScheme = State.VoteContract.GetVoteScheme.Call(voteSchemeId);
         if (voteScheme?.VoteMechanism != VoteMechanism.UniqueVote)
@@ -334,28 +341,30 @@ public partial class GovernanceContract
             }
         }
 
-        var isReject = rejectVote * GovernanceContractConstants.AbstractVoteTotal >
-                       threshold.MaximalRejectionThreshold * totalVote;
-        if (isReject)
+        var totalVote = GetTotalVoteCount(proposalInfo,  votingResult);
+        if (threshold!.MaximalRejectionThreshold > 0)
         {
-            return CreateProposalStatusOutput(ProposalStatus.Rejected, ProposalStage.Finished);
+            var isReject = rejectVote * GovernanceContractConstants.AbstractVoteTotal >
+                           threshold.MaximalRejectionThreshold * totalVote;
+            if (isReject)
+            {
+                return CreateProposalStatusOutput(ProposalStatus.Rejected, ProposalStage.Finished);
+            }
         }
 
-        var isAbstained = abstainVote * GovernanceContractConstants.AbstractVoteTotal >
-                          threshold.MaximalAbstentionThreshold * totalVote;
-        if (isAbstained)
+        if (threshold.MaximalAbstentionThreshold > 0)
         {
-            return CreateProposalStatusOutput(ProposalStatus.Abstained, ProposalStage.Finished);
+            var isAbstained = abstainVote * GovernanceContractConstants.AbstractVoteTotal >
+                              threshold.MaximalAbstentionThreshold * totalVote;
+            if (isAbstained)
+            {
+                return CreateProposalStatusOutput(ProposalStatus.Abstained, ProposalStage.Finished);
+            }
         }
 
         var isApproved = approveVote * GovernanceContractConstants.AbstractVoteTotal >
                          threshold.MinimalApproveThreshold * totalVote;
-        if (!isApproved)
-        {
-            return CreateProposalStatusOutput(ProposalStatus.BelowThreshold, ProposalStage.Finished);
-        }
-
-        return null;
+        return !isApproved ? CreateProposalStatusOutput(ProposalStatus.BelowThreshold, ProposalStage.Finished) : null;
     }
 
     private ProposalStatusOutput GetGovernanceProposalStatus(ProposalInfo proposalInfo)
@@ -430,6 +439,19 @@ public partial class GovernanceContract
         return realMinimalRequiredThreshold;
     }
 
+    private long GetTotalVoteCount(ProposalInfo proposalInfo, VotingResult votingResult)
+    {
+        var schemeAddress = proposalInfo.ProposalBasicInfo.SchemeAddress;
+        var governanceScheme = State.GovernanceSchemeMap[schemeAddress];
+        Assert(governanceScheme != null, $"Governance Scheme {schemeAddress} not exists.");
+        if (governanceScheme!.GovernanceMechanism == GovernanceMechanism.Organization)
+        {
+            var daoId = proposalInfo.ProposalBasicInfo.DaoId;
+            return CallAndCheckMemberCount(daoId);
+        }
+        return votingResult.VotesAmount;
+    }
+
     private bool HasPendingStatus(Hash proposalId)
     {
         var proposal = State.Proposals[proposalId];
@@ -464,11 +486,7 @@ public partial class GovernanceContract
         // AssertNumberInRange(vetoExecuteTimePeriod, GovernanceContractConstants.MinVetoExecuteTimePeriod,
         //     GovernanceContractConstants.MaxVetoExecuteTimePeriod, "VetoExecuteTimePeriod");
 
-        var timePeriod = State.DaoProposalTimePeriods[input.DaoId];
-        if (timePeriod == null)
-        {
-            timePeriod = new DaoProposalTimePeriod();
-        }
+        var timePeriod = State.DaoProposalTimePeriods[input.DaoId] ?? new DaoProposalTimePeriod();
 
         timePeriod.ActiveTimePeriod = activeTimePeriod;
         timePeriod.VetoActiveTimePeriod = vetoActiveTimePeriod;
@@ -534,8 +552,8 @@ public partial class GovernanceContract
         var timePeriod = State.DaoProposalTimePeriods[input];
         return timePeriod ?? new DaoProposalTimePeriod
         {
-            ActiveTimePeriod = GovernanceContractConstants.MinActiveTimePeriod,
-            VetoActiveTimePeriod = GovernanceContractConstants.MinVetoActiveTimePeriod,
+            ActiveTimePeriod = GovernanceContractConstants.DefaultActiveTimePeriod,
+            VetoActiveTimePeriod = GovernanceContractConstants.DefaultVetoActiveTimePeriod,
             PendingTimePeriod = GovernanceContractConstants.MinPendingTimePeriod,
             ExecuteTimePeriod = GovernanceContractConstants.MinExecuteTimePeriod,
             VetoExecuteTimePeriod = GovernanceContractConstants.MinVetoExecuteTimePeriod
@@ -550,10 +568,5 @@ public partial class GovernanceContract
         }
 
         return State.ProposalGovernanceSchemeSnapShot[input];
-    }
-
-    public override Empty ClearProposal(Hash input)
-    {
-        return new Empty();
     }
 }

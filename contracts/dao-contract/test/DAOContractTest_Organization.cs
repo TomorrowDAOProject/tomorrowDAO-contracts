@@ -1,6 +1,4 @@
 using System.Threading.Tasks;
-using AElf.Contracts.MultiToken;
-using AElf.Types;
 using Google.Protobuf;
 using Shouldly;
 using TomorrowDAO.Contracts.Governance;
@@ -66,5 +64,14 @@ public partial class DAOContractTests
     {
         await InitializeAll();
         await GetMemberCount(OrganizationDaoId, 1);
+    }
+
+    [Fact]
+    public async Task GetOrganizationAddressTest()
+    {
+        await InitializeAll();
+        var address = await DAOContractStub.GetOrganizationAddress.CallAsync(OrganizationDaoId);
+        address.ShouldNotBeNull();
+        address.ShouldBe(OSchemeAddress);
     }
 }
