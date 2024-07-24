@@ -468,8 +468,8 @@ public partial class GovernanceContract
         Assert(State.Initialized.Value, "Not initialized yet.");
         //Assert(Context.Sender == State.DaoContract.Value, "No permission.");
         AssertParams(input, input?.DaoId, input?.ProposalTimePeriod);
-        var daoInfo = State.DaoContract.GetDAOInfo.Call(input.DaoId);
-        Assert(daoInfo != null && daoInfo.DaoId == input.DaoId && daoInfo.SubsistStatus, "Invalid dao id");
+        var daoInfo = CallAndCheckDaoInfo(input!.DaoId);
+        Assert(daoInfo.SubsistStatus, "DAO is not in subsistence.");
         var activeTimePeriod = input!.ProposalTimePeriod.ActiveTimePeriod;
         var vetoActiveTimePeriod = input.ProposalTimePeriod.VetoActiveTimePeriod;
         var pendingTimePeriod = input.ProposalTimePeriod.PendingTimePeriod;

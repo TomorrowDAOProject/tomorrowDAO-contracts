@@ -24,7 +24,7 @@ public class TreasuryContractTestsBase : TestBase
 {
     protected const string DefaultGovernanceToken = "ELF";
     protected const long OneElfAmount = 100000000;
-    public const long ActiveTimePeriod = 7;
+    public const long ActiveTimePeriod = 7 * 24;
     
     internal IBlockTimeProvider BlockTimeProvider;
     internal Hash DefaultDaoId = HashHelper.ComputeFrom("DaoId");
