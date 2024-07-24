@@ -91,17 +91,17 @@ public partial class DAOContractTests
         GovernanceR1A1VProposalId = await CreateProposal(OrganizationDaoId, ProposalType.Governance, OSchemeAddress, UniqueVoteVoteSchemeId, 
             "SetProposalTimePeriod", DAOContractAddress, new SetProposalTimePeriodInput{DaoId = OrganizationDaoId, ProposalTimePeriod = new DaoProposalTimePeriod
             {
-                ActiveTimePeriod = 15,
-                VetoActiveTimePeriod = 3,
-                PendingTimePeriod = 7,
-                ExecuteTimePeriod = 5,
-                VetoExecuteTimePeriod = 3
+                ActiveTimePeriod = 15 * 24,
+                VetoActiveTimePeriod = 3 * 24,
+                PendingTimePeriod = 7 * 24,
+                ExecuteTimePeriod = 5 * 24,
+                VetoExecuteTimePeriod = 3 * 24
             }}.ToByteString());
-        CheckProposalTimePeriod(DaoId, 7);
+        CheckProposalTimePeriod(DaoId, 7 * 24);
         await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceR1A1VProposalId);
         BlockTimeProvider.SetBlockTime(3600 * 24 * 8 * 1000);
         await GovernanceContractStub.ExecuteProposal.SendAsync(GovernanceR1A1VProposalId);
-        CheckProposalTimePeriod(DaoId, 15);
+        CheckProposalTimePeriod(DaoId, 15 * 24);
     }
     
     private async void CheckProposalTimePeriod(Hash daoId, int value)

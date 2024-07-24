@@ -98,7 +98,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao()
     {
-        var input = MockCreateProposalInput(1);
+        var input = MockCreateProposalInput(1 * 24);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,
@@ -132,7 +132,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao_BelowThreshold()
     {
-        var input = MockCreateProposalInput(1);
+        var input = MockCreateProposalInput(1 * 24);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,

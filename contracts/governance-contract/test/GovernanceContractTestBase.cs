@@ -458,7 +458,7 @@ public class GovernanceContractTestBase : TestBase
         return executionResult.Output;
     }
 
-    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7)
+    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
@@ -486,7 +486,7 @@ public class GovernanceContractTestBase : TestBase
         return input;
     }
 
-    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3)
+    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3 * 24)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
