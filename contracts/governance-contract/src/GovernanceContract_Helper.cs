@@ -202,13 +202,13 @@ public partial class GovernanceContract
         {
             case ProposalType.Veto:
                 proposalTime.ActiveStartTime = Context.CurrentBlockTime;
-                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddMinutes(timePeriod.VetoActiveTimePeriod);
+                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddHours(timePeriod.VetoActiveTimePeriod);
                 break;
             case ProposalType.Governance:
             case ProposalType.Advisory:
             default:
                 proposalTime.ActiveStartTime = Context.CurrentBlockTime;
-                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddMinutes(timePeriod.ActiveTimePeriod);
+                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddHours(timePeriod.ActiveTimePeriod);
                 break;
         }
 
@@ -218,19 +218,19 @@ public partial class GovernanceContract
                 var scheme = GetScheme(proposalBasicInfo.SchemeAddress);
                 if (scheme.GovernanceMechanism == GovernanceMechanism.HighCouncil)
                 {
-                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddMinutes(timePeriod.PendingTimePeriod);
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddHours(timePeriod.PendingTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
                 }
                 else
                 {
                     proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
                 }
 
                 break;
             case ProposalType.Veto:
                 proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddMinutes(timePeriod.VetoExecuteTimePeriod);
+                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.VetoExecuteTimePeriod);
                 break;
             case ProposalType.Advisory:
                 break;
