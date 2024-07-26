@@ -344,7 +344,7 @@ public partial class GovernanceContract
         var totalVote = GetTotalVoteCount(proposalInfo,  votingResult);
         if (threshold!.MaximalRejectionThreshold > 0)
         {
-            var isReject = rejectVote * GovernanceContractConstants.AbstractVoteTotal >
+            var isReject = rejectVote * GovernanceContractConstants.AbstractVoteTotal >=
                            threshold.MaximalRejectionThreshold * totalVote;
             if (isReject)
             {
@@ -354,7 +354,7 @@ public partial class GovernanceContract
 
         if (threshold.MaximalAbstentionThreshold > 0)
         {
-            var isAbstained = abstainVote * GovernanceContractConstants.AbstractVoteTotal >
+            var isAbstained = abstainVote * GovernanceContractConstants.AbstractVoteTotal >=
                               threshold.MaximalAbstentionThreshold * totalVote;
             if (isAbstained)
             {
@@ -362,7 +362,7 @@ public partial class GovernanceContract
             }
         }
 
-        var isApproved = approveVote * GovernanceContractConstants.AbstractVoteTotal >
+        var isApproved = approveVote * GovernanceContractConstants.AbstractVoteTotal >=
                          threshold.MinimalApproveThreshold * totalVote;
         return !isApproved ? CreateProposalStatusOutput(ProposalStatus.BelowThreshold, ProposalStage.Finished) : null;
     }
