@@ -31,10 +31,9 @@ public class GovernanceContractTestProposalCreateVetoProposal : GovernanceContra
         var vetoProposalId = executionResult.Output;
         
         //Election
-        await HighCouncilElection(input.ProposalBasicInfo.DaoId);
-        
-        await HighCouncilElectionFor(input.ProposalBasicInfo.DaoId, UserAddress);
-        var addressList = await ElectionContractStub.GetVictories.CallAsync(input.ProposalBasicInfo.DaoId);
+        //await HighCouncilElection(input.ProposalBasicInfo.DaoId);
+        //await HighCouncilElectionFor(input.ProposalBasicInfo.DaoId, UserAddress);
+        var addressList = await ElectionContractStub.GetHighCouncilMembers.CallAsync(input.ProposalBasicInfo.DaoId);
         addressList.Value.Count.ShouldBe(2);
 
         //Vote 10s

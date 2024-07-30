@@ -78,11 +78,11 @@ public class ElectionContractTestBaseAddHighCouncil : ElectionContractTestBase
         addressList.ShouldNotBeNull();
         addressList.Value.Count.ShouldBe(2);
 
-        await ElectionContractStub.TakeSnapshot.SendAsync(new TakeElectionSnapshotInput
-        {
-            DaoId = daoId,
-            TermNumber = 1
-        });
+        // await ElectionContractStub.TakeSnapshot.SendAsync(new TakeElectionSnapshotInput
+        // {
+        //     DaoId = daoId,
+        //     TermNumber = 1
+        // });
         
         addressList = await ElectionContractStub.GetHighCouncilMembers.CallAsync(daoId);
         addressList.ShouldNotBeNull();

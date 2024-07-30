@@ -370,7 +370,9 @@ public class DAOContractTestBase : TestBase
                     MinimalApproveThreshold = 1,
                     MaximalRejectionThreshold = 2000,
                     MaximalAbstentionThreshold = 2000
-                }
+                },
+                HighCouncilMembers = new AddressList(){Value = { new []{DefaultAddress, UserAddress} }},
+                IsHighCouncilElectionClose = false
             },
             IsTreasuryNeeded = false,
             IsNetworkDao = isNetworkDao,
