@@ -218,7 +218,7 @@ public class VoteContractTestBase : TestBase
         return null;
     }
     
-    protected async Task<IExecutionResult<Empty>> HighCouncilElection(Hash daoId)
+    protected async Task HighCouncilElection(Hash daoId)
     {
         await ApproveElf(OneElf * 100, ElectionContractAddress);;
         await ElectionContractStub.AnnounceElection.SendAsync(new AnnounceElectionInput
@@ -227,12 +227,11 @@ public class VoteContractTestBase : TestBase
             CandidateAdmin = DefaultAddress
         });
         await ElectionVote(DefaultAddress);
-        var result = await TakeSnapshot(DaoId, 1);
-        (await ElectionContractStub.GetVictories.CallAsync(DaoId)).Value.ShouldContain(DefaultAddress);
-        return result;
+        //var result = await TakeSnapshot(DaoId, 1);
+        (await ElectionContractStub.GetHighCouncilMembers.CallAsync(DaoId)).Value.ShouldContain(DefaultAddress);
     }
     
-    protected async Task<IExecutionResult<Empty>> HighCouncilElectionFor(Hash daoId, Address candidateAddress)
+    protected async Task HighCouncilElectionFor(Hash daoId, Address candidateAddress)
     {
         await ApproveElf(OneElf * 100, ElectionContractAddress);
         await ElectionContractStub.AnnounceElectionFor.SendAsync(new AnnounceElectionForInput
@@ -240,9 +239,8 @@ public class VoteContractTestBase : TestBase
             DaoId = daoId, Candidate = candidateAddress, CandidateAdmin = DefaultAddress
         });
         await ElectionVote(candidateAddress);
-        var result = await TakeSnapshot(DaoId, 2);
-        (await ElectionContractStub.GetVictories.CallAsync(DaoId)).Value.ShouldContain(candidateAddress);
-        return result;
+        //var result = await TakeSnapshot(DaoId, 2);
+        (await ElectionContractStub.GetHighCouncilMembers.CallAsync(DaoId)).Value.ShouldContain(candidateAddress);
     }
 
     protected async Task ApproveElf(long amount, Address spender)
@@ -372,7 +370,9 @@ public class VoteContractTestBase : TestBase
                     MinimalApproveThreshold = 1,
                     MaximalRejectionThreshold = 2000,
                     MaximalAbstentionThreshold = 2000
-                }
+                },
+                HighCouncilMembers = new DAO.AddressList(){Value = { new []{DefaultAddress, UserAddress} }},
+                IsHighCouncilElectionClose = false
             },
             IsTreasuryNeeded = false,
             IsNetworkDao = isNetworkDao,

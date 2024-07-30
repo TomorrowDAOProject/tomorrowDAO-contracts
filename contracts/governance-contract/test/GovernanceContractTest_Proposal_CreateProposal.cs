@@ -141,6 +141,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
                 {
                     var createDaoInput = BuildCreateDaoInput(isNetworkDao: false,
                         governanceMechanism: GovernanceMechanism.Organization);
+                    createDaoInput.Members.Value.Add(Accounts[2].Address);
                     createDaoInput.GovernanceSchemeThreshold.MinimalRequiredThreshold = 0;
                         var daoId = await MockDao(input: createDaoInput);
                     return daoId;

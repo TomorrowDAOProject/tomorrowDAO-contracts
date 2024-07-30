@@ -46,8 +46,8 @@ public partial class DAOContractTests
         GovernanceHc1T1VProposalId = await CreateProposal(DaoId, ProposalType.Governance, HcSchemeAddress, TokenBallotVoteSchemeId,
             "RemoveGovernanceScheme", DAOContractAddress, new RemoveGovernanceSchemeInput{DaoId = DaoId, SchemeAddress = HcSchemeAddress}.ToByteString());
         CheckGovernanceSchemeThreshold(RSchemeAddress, 0);
-        await HighCouncilElection(DaoId);
-        await HighCouncilElectionFor(DaoId, UserAddress);
+        //await HighCouncilElection(DaoId);
+        //await HighCouncilElectionFor(DaoId, UserAddress);
         await ApproveElf(OneElf * 100, VoteContractAddress);
         await Vote(OneElf, VoteOption.Approved, GovernanceHc1T1VProposalId);
         BlockTimeProvider.SetBlockTime(3600 * 24 * 14 * 1000);

@@ -37,20 +37,6 @@ service ElectionContract {
 
   rpc Withdraw (aelf.Hash) returns (google.protobuf.Empty) {
   }
-
-  rpc ChangeVotingOption (ChangeVotingOptionInput) returns (google.protobuf.Empty) {
-  }
-  rpc UpdateCandidateInformation (UpdateCandidateInformationInput) returns (google.protobuf.Empty) {
-  }
-  rpc UpdateMultipleCandidateInformation (UpdateMultipleCandidateInformationInput) returns (google.protobuf.Empty) {
-  }
-  rpc ReplaceCandidateAddress (ReplaceCandidatePubkeyInput) returns (google.protobuf.Empty) {
-  }
-  rpc RemoveEvilNode (RemoveEvilNodeInput) returns (google.protobuf.Empty) {
-  }
-  rpc EnableElection (aelf.Hash) returns (google.protobuf.Empty) {
-  }
-  
   // views
   rpc GetCandidates (aelf.Hash) returns (AddressList) {
     option (aelf.is_view) = true;
@@ -67,7 +53,7 @@ service ElectionContract {
   rpc GetCandidateInformation (GetCandidateInformationInput) returns (CandidateInformation) {
     option (aelf.is_view) = true;
   }
-
+  
   rpc GetPageableCandidateInformation (PageInformation) returns (GetPageableCandidateInformationOutput) {
     option (aelf.is_view) = true;
   }
@@ -403,29 +389,6 @@ message SetCandidateAdminInput {
   aelf.Address new_admin = 3;
 }
 
-
-
-message ChangeVotingOptionInput {
-  // The vote id to change.
-  aelf.Hash vote_id = 1;
-  // The new candidate address.
-  aelf.Address candidate_address = 2;
-  // Tokens will be locked another previous locking time if this is true.
-  bool is_reset_voting_time = 3;
-}
-
-message UpdateCandidateInformationInput {
-  aelf.Hash dao_id = 1;
-  // The candidate public key.
-  aelf.Address candidate_address = 2;
-  // Is it a evil node. If true will remove the candidate.
-  bool is_evil_node = 3;
-}
-
-message UpdateMultipleCandidateInformationInput {
-  repeated UpdateCandidateInformationInput value = 1;
-}
-
 message CandidateInfo {
   // The candidate address.
   aelf.Address candidate_address = 1;
@@ -435,56 +398,6 @@ message CandidateInfo {
 
 message CandidateInfoList {
   repeated CandidateInfo value = 1;
-}
-
-message ReplaceCandidatePubkeyInput {
-  aelf.Hash dao_id = 1;
-  aelf.Address old_address = 2;
-  aelf.Address new_address = 3;
-}
-
-message RemoveEvilNodeInput {
-  aelf.Hash dao_id = 1;
-  aelf.Address evil_node_address = 2;
-}
-
-message VoteChanged {
-  option (aelf.is_event) = true;
-  aelf.Hash vote_id = 1;
-  aelf.Address candidate_address = 2;
-}
-
-message CandidateInfoUpdated {
-  option (aelf.is_event) = true;
-  aelf.Hash dao_id = 1;
-  // The candidate address.
-  aelf.Address candidate_address = 2;
-  // Is it a evil node. If true will remove the candidate.
-  bool is_evil_node = 3;
-}
-
-message MultipleCandidateInfoUpdated {
-  option (aelf.is_event) = true;
-  aelf.Hash dao_id = 1;
-  CandidateInfoList list = 2;
-}
-
-message CandidateAddressReplaced {
-  option (aelf.is_event) = true;
-  aelf.Hash dao_id = 1;
-  aelf.Address old_address = 2;
-  aelf.Address new_address = 3;
-}
-
-message EvilNodeRemoved {
-  option (aelf.is_event) = true;
-  aelf.Hash dao_id = 1;
-  aelf.Address evil_node_address = 2;
-}
-
-message ElectionEnabled {
-  option (aelf.is_event) = true;
-  aelf.Hash dao_id = 1;
 }
 
 message AddHighCouncilInput {

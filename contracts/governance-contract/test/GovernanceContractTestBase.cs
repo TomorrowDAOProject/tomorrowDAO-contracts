@@ -146,7 +146,9 @@ public class GovernanceContractTestBase : TestBase
                     MinimalApproveThreshold = 1,
                     MaximalRejectionThreshold = 2000,
                     MaximalAbstentionThreshold = 2000
-                }
+                },
+                HighCouncilMembers = new DAO.AddressList(){Value = { new []{DefaultAddress, UserAddress} }},
+                IsHighCouncilElectionClose = false
             },
             IsTreasuryNeeded = false,
             IsNetworkDao = isNetworkDao,
