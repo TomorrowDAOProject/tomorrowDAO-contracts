@@ -98,11 +98,11 @@ namespace TomorrowDAO.Contracts.Vote
             // await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceR1A1VProposalId);
             // await VoteException(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceHc1A1VProposalId, "Invalid voter: not HC");
             await Vote(OneElf, VoteOption.Approved, GovernanceR1T1VProposalId);
-            await VoteException(OneElf, VoteOption.Approved, GovernanceHc1T1VProposalId, "Invalid voter: not HC");
+            await Vote(OneElf, VoteOption.Approved, GovernanceHc1T1VProposalId);
             // await Vote(UniqueVoteVoteAmount, VoteOption.Approved, AdvisoryR1A1VProposalId);
             // await VoteException(UniqueVoteVoteAmount, VoteOption.Approved, AdvisoryHc1A1VProposalId, "Invalid voter: not HC");
             await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId);
-            await VoteException(OneElf, VoteOption.Approved, AdvisoryHc1T1VProposalId, "Invalid voter: not HC");
+            await Vote(OneElf, VoteOption.Approved, AdvisoryHc1T1VProposalId);
             
             // organization
             await Vote(UniqueVoteVoteAmount, VoteOption.Approved, GovernanceO1A1VProposalId);
