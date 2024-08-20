@@ -12,17 +12,21 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         AssertCommon(input);
         Assert(State.GenesisContract.GetContractInfo.Call(Context.Self).Deployer == Context.Sender, "No permission.");
         var voteSchemeId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.Self), 
-            HashHelper.ComputeFrom(input.VoteMechanism.ToString()));
+            HashHelper.ComputeFrom(input));
         Assert(State.VoteSchemes[voteSchemeId] == null, "VoteScheme already exists.");
         State.VoteSchemes[voteSchemeId] = new VoteScheme
         {
             SchemeId = voteSchemeId,
-            VoteMechanism = input.VoteMechanism
+            VoteMechanism = input.VoteMechanism,
+            WithoutLockToken = input.WithoutLockToken,
+            VoteStrategy = input.VoteStrategy
         };
         Context.Fire(new VoteSchemeCreated
         {
             VoteSchemeId = voteSchemeId,
-            VoteMechanism = input.VoteMechanism
+            VoteMechanism = input.VoteMechanism,
+            WithoutLockToken = input.WithoutLockToken,
+            VoteStrategy = input.VoteStrategy
         });
         return new Empty();
     }
