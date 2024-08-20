@@ -470,7 +470,7 @@ public class GovernanceContractTestBase : TestBase
     }
 
     internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24, Hash voteSchemeId = null,
-        Timestamp activeStartTime = null, Timestamp activeEndTime = null)
+        long activeStartTime = 0, long activeEndTime = 0)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
