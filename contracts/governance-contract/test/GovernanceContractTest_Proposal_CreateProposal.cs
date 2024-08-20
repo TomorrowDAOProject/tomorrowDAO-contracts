@@ -170,8 +170,11 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_1()
     {
-        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
-        var activeEndTime = activeStartTime.AddHours(2);
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(7 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
         
         var input = MockCreateProposalInput(7 * 24, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
@@ -200,8 +203,11 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_4()
     {
-        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
-        var activeEndTime = activeStartTime.AddHours(-2);
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(-2);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
@@ -211,8 +217,11 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_5()
     {
-        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow).AddDays(-1000);
-        var activeEndTime = activeStartTime.AddHours(2);
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now.AddDays(-1000));
+        var endTime = startTime.AddHours(2);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
@@ -222,8 +231,11 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_6()
     {
-        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
-        var activeEndTime = activeStartTime.AddHours(16 * 24);
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(16 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
@@ -233,15 +245,36 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Valid_Active_params()
     {
-        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
-        var activeEndTime = activeStartTime.AddHours(7 * 24);
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(7 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
         var proposalCreatedEvent = result.TransactionResult.Logs.Single(x => x.Name.Contains(nameof(ProposalCreated)));
         proposalCreatedEvent.ShouldNotBeNull();
         var proposalCreated = ProposalCreated.Parser.ParseFrom(proposalCreatedEvent.NonIndexed);
-        proposalCreated.ActiveStartTime.ShouldBe(activeStartTime);
-        proposalCreated.ActiveEndTime.ShouldBe(activeEndTime);
+        proposalCreated.ActiveStartTime.ShouldBe(Timestamp.FromDateTime(startTime));
+        proposalCreated.ActiveEndTime.ShouldBe(Timestamp.FromDateTime(endTime));
+    }
+
+    private static long Time(DateTime time)
+    {
+        return (long)(time - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+    }
+
+    private DateTime RoundedToSecond(DateTime time)
+    {
+        return new DateTime(
+            time.Year,
+            time.Month,
+            time.Day,
+            time.Hour,
+            time.Minute,
+            time.Second,
+            DateTimeKind.Utc
+        );
     }
 }
