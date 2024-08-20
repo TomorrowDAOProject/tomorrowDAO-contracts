@@ -70,10 +70,24 @@ public partial class VoteContract
         return State.VotingItems[votingItemId];
     }
 
-    private void AssertVotingRecord(Hash votingItemId, Address voter)
+    private void AssertVotingRecord(Hash votingItemId, Address voter, VoteScheme voteScheme, VoteInput input)
     {
         Assert(IsHashValid(votingItemId), "Invalid votingItemId.");
-        Assert(State.VotingRecords[votingItemId][voter] == null, "Voter already voted.");
+        var votingRecord = State.VotingRecords[votingItemId][voter];
+        if (VoteStrategy.ProposalDistinct == voteScheme.VoteStrategy)
+        {
+            Assert(votingRecord == null, "Voter already voted.");
+        }
+        else
+        {
+            if (votingRecord == null)
+            {
+                return;
+            }
+            var formatVoteTime = votingRecord.VoteTimestamp.ToDateTime().ToString(VoteContractConstants.DayFormatString);
+            var formatNow = Context.CurrentBlockTime.ToDateTime().ToString(VoteContractConstants.DayFormatString);
+            Assert(string.CompareOrdinal(formatVoteTime, formatNow) < 0, "Voter already voted today.");
+        }
     }
 
     private TokenInfo AssertToken(string token)
@@ -123,6 +137,21 @@ public partial class VoteContract
         }
         Assert(withdrawAmount == input.WithdrawAmount, $"Invalid withdraw amount. withdrawAmount is {withdrawAmount} input.WithdrawAmount is {input.WithdrawAmount}");
         return withdrawAmount;
+    }
+    
+    private void AssertTokenBalance(Address owner, string token, long threshold)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        var tokenBalance = State.TokenContract.GetBalance.Call(new GetBalanceInput
+        {
+            Owner = owner,
+            Symbol = token
+        });
+        Assert(tokenBalance != null && tokenBalance.Balance >= threshold, "Token balance not enough.");
     }
 
     private Hash GetVirtualAddressHash(Address user, Hash daoId)

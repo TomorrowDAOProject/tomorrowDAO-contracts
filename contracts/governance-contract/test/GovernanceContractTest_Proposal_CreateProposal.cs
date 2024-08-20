@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AElf.CSharp.Core.Extension;
 using AElf.Types;
+using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using TomorrowDAO.Contracts.Vote;
 using Xunit;
@@ -162,5 +165,83 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         output.ShouldNotBeNull();
         output.ProposalStage.ShouldBe(ProposalStage.Finished);
         output.ProposalStatus.ShouldBe(ProposalStatus.BelowThreshold);
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_1()
+    {
+        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
+        var activeEndTime = activeStartTime.AddHours(2);
+        
+        var input = MockCreateProposalInput(7 * 24, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Duplicated active period params.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_2()
+    {
+        var input = MockCreateProposalInput(16 * 24, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("ProposalBasicInfo.ActiveTimePeriod should be between 1 and 360");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_3()
+    {
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_4()
+    {
+        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
+        var activeEndTime = activeStartTime.AddHours(-2);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_5()
+    {
+        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow).AddDays(-1000);
+        var activeEndTime = activeStartTime.AddHours(2);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_6()
+    {
+        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
+        var activeEndTime = activeStartTime.AddHours(16 * 24);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active params, active period should no more than fifteen day.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Valid_Active_params()
+    {
+        var activeStartTime = Timestamp.FromDateTime(DateTime.UtcNow);
+        var activeEndTime = activeStartTime.AddHours(7 * 24);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        var proposalCreatedEvent = result.TransactionResult.Logs.Single(x => x.Name.Contains(nameof(ProposalCreated)));
+        proposalCreatedEvent.ShouldNotBeNull();
+        var proposalCreated = ProposalCreated.Parser.ParseFrom(proposalCreatedEvent.NonIndexed);
+        proposalCreated.ActiveStartTime.ShouldBe(activeStartTime);
+        proposalCreated.ActiveEndTime.ShouldBe(activeEndTime);
     }
 }

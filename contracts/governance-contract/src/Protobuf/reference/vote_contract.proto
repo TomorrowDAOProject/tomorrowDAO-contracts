@@ -24,45 +24,9 @@ service VoteContract {
   }
   rpc Withdraw (WithdrawInput) returns (google.protobuf.Empty) {
   }
-  rpc Stake (StakeInput) returns (google.protobuf.Empty){
-  }
-  rpc RequestUnStake (RequestUnStakeInput) returns (google.protobuf.Empty){
-  }
-  rpc SetStakeableTokens (SetStakeableTokensInput) returns (google.protobuf.Empty){
-  }
-  rpc SetVotingPowerWeight (SetVotingPowerWeightInput) returns (google.protobuf.Empty){
-  }
-  rpc SetMaxVotingPowers (SetMaxVotingPowersInput) returns (google.protobuf.Empty){
-  }
-  rpc SetUnstakeCooldownStatus (SetUnstakeCooldownStatusInput) returns (google.protobuf.Empty){
-  }
   rpc SetEmergencyStatus (SetEmergencyStatusInput) returns (google.protobuf.Empty){
   }
-  rpc WithdrawInEmergency (WithdrawInEmergencyInput) returns (google.protobuf.Empty){
-  }
-
   rpc GetVoteScheme (aelf.Hash) returns (VoteScheme){
-    option (aelf.is_view) = true;
-  }
-  rpc GetSupportStakeTokens (aelf.Hash) returns (GetSupportStakeTokensOutput){
-    option (aelf.is_view) = true;
-  }
-  rpc GetStakeTokenAmount (GetStakeTokenAmountInput) returns (TokenAmountList){
-    option (aelf.is_view) = true;
-  }
-  rpc GetUserVotingPower (GetUserVotingPowerInput) returns (UserVotingPowersInfo){
-    option (aelf.is_view) = true;
-  }
-  rpc GetDaoVotingPower (aelf.Hash) returns (DaoVotingPowersInfo){
-    option (aelf.is_view) = true;
-  }
-  rpc GetVotingPowersOnProposalList (aelf.Address) returns (VotingPowersOnProposalList){
-    option (aelf.is_view) = true;
-  }
-  rpc GetTokenVotingPowersWeight (GetTokenVotingPowersWeightInput) returns (google.protobuf.Int32Value){
-    option (aelf.is_view) = true;
-  }
-  rpc GetMaxVotingPower (GetMaxVotingPowerInput) returns (google.protobuf.Int64Value){
     option (aelf.is_view) = true;
   }
   rpc GetVotingItem (aelf.Hash) returns (VotingItem) {
@@ -71,16 +35,10 @@ service VoteContract {
   rpc GetVotingResult (aelf.Hash) returns (VotingResult) {
     option (aelf.is_view) = true;
   }
-  rpc GetVotingSnapShot (GetVotingSnapShotInput) returns (VotingResult) {
-    option (aelf.is_view) = true;
-  }
   rpc GetVotingRecord (GetVotingRecordInput) returns (VotingRecord) {
     option (aelf.is_view) = true;
   }
   rpc GetVirtualAddress (GetVirtualAddressInput) returns (aelf.Address) {
-    option (aelf.is_view) = true;
-  }
-  rpc GetVotingIds (aelf.Address) returns (VotedIds) {
     option (aelf.is_view) = true;
   }
   rpc GetDaoRemainAmount (GetDaoRemainAmountInput) returns (DaoRemainAmount) {
@@ -98,11 +56,18 @@ service VoteContract {
 message VoteScheme {
   aelf.Hash scheme_id = 1;
   VoteMechanism vote_mechanism = 3;
+  bool without_lock_token = 4;
+  VoteStrategy vote_strategy = 5;
 }
 
 enum VoteMechanism {
   UNIQUE_VOTE = 0; // 1a1v
   TOKEN_BALLOT = 1; // 1t1v
+}
+
+enum VoteStrategy {
+  PROPOSAL_DISTINCT = 0;
+  DAY_DISTINCT = 1;
 }
 
 message VotingItemIdList {
@@ -148,6 +113,7 @@ enum VoteOption {
 enum GovernanceMechanism {
   REFERENDUM = 0;
   HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
 }
 
 message VotingResult {
@@ -162,24 +128,8 @@ message VotingResult {
   google.protobuf.Timestamp end_timestamp = 8;
 }
 
-message UserVotingPowersInfo {
-  aelf.Hash dao_id = 1;
-  aelf.Address voting_address = 2;
-  int64 all_voting_powers = 3;
-}
-
-message DaoVotingPowersInfo {
-  aelf.Hash dao_id = 1;
-  int64 all_voting_powers = 2;
-  int64 max_voting_powers = 3;
-}
-
 message StakeableTokenList {
   repeated string accepted_symbol_list = 1;
-}
-
-message VotedIds {
-  repeated aelf.Hash vote_ids = 1;
 }
 
 message DaoRemainAmount {
@@ -225,6 +175,8 @@ message InitializeInput {
 
 message CreateVoteSchemeInput {
   VoteMechanism vote_mechanism = 1;
+  bool without_lock_token = 2;
+  VoteStrategy vote_strategy = 3;
 }
 
 message VotingRegisterInput {
@@ -241,6 +193,7 @@ message VoteInput {
   aelf.Hash voting_item_id = 1;
   int32 vote_option = 2;
   int64 vote_amount = 3; //1a1v -> 1
+  string memo = 4;
 }
 
 message WithdrawInput {
@@ -249,61 +202,9 @@ message WithdrawInput {
   VotingItemIdList voting_item_id_list = 3;
 }
 
-message StakeInput {
-  aelf.Hash dao_id = 1;
-  string symbol = 2;
-  int64 amount = 3;
-}
-
-message RequestUnStakeInput {
-  aelf.Hash dao_id = 1;
-  int64 amount = 2;
-  string symbol = 3;
-}
-
-message SetStakeableTokensInput {
-  aelf.Hash dao_id = 1;
-  repeated string accepted_token_list = 2;
-}
-
-message SetVotingPowerWeightInput {
-  aelf.Hash dao_id = 1;
-  string token_symbol = 2;
-  int64 weight = 3;
-}
-
-message SetMaxVotingPowersInput {
-  aelf.Hash dao_id = 1;
-  string token_symbol = 2;
-  int64 max_voting_power = 3;
-}
-
-message SetUnstakeCooldownStatusInput{
-  aelf.Hash dao_id = 1;
-  bool is_enable = 2;
-}
-
 message SetEmergencyStatusInput {
   aelf.Hash dao_id = 1;
   bool is_enable = 2;
-}
-
-message WithdrawInEmergencyInput {
-  aelf.Hash dao_id = 1;
-}
-
-message GetSupportStakeTokensOutput {
-  repeated string token_list = 1;
-}
-
-message GetStakeTokenAmountInput {
-  aelf.Address sender = 1;
-  aelf.Hash dao_id = 2;
-}
-
-message GetUserVotingPowerInput {
-  aelf.Address user = 1;
-  aelf.Hash dao_id = 2;
 }
 
 message TokenAmount {
@@ -311,32 +212,9 @@ message TokenAmount {
   int64 amount = 2;
 }
 
-message TokenAmountList {
-  repeated TokenAmount value = 1;
-}
-
-message VotingPowersOnProposalList {
-  repeated VotingPowersOnProposal value = 1;
-}
-
 message VotingPowersOnProposal {
   aelf.Hash proposal_id = 1;
   int64 amount = 2;
-}
-
-message GetTokenVotingPowersWeightInput {
-  aelf.Hash dao_id = 1;
-  string symbol = 2;
-}
-
-message GetMaxVotingPowerInput {
-  aelf.Hash dao_id = 1;
-  string symbol = 2;
-}
-
-message GetVotingSnapShotInput {
-  // The voting activity id.
-  aelf.Hash voting_item_id = 1;
 }
 
 message GetVotingRecordInput {
@@ -351,8 +229,7 @@ message GetVirtualAddressInput {
 
 message GetDaoRemainAmountInput {
   aelf.Hash dao_id = 1;
-  aelf.Hash voting_item_id = 2;
-  aelf.Address voter = 3;
+  aelf.Address voter = 2;
 }
 
 message GetProposalRemainAmountInput {
@@ -366,6 +243,8 @@ message VoteSchemeCreated {
   option (aelf.is_event) = true;
   aelf.Hash vote_scheme_id = 1;
   VoteMechanism vote_mechanism = 2;
+  bool without_lock_token = 4;
+  VoteStrategy vote_strategy = 5;
 }
 
 message VotingItemRegistered {
@@ -402,6 +281,7 @@ message Voted {
   VoteMechanism vote_mechanism = 8;
   google.protobuf.Timestamp start_time = 9;
   google.protobuf.Timestamp end_time = 10;
+  string memo = 11;
 }
 
 message Withdrawn {

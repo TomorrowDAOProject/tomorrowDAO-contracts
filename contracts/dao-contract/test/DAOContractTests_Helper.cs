@@ -227,25 +227,7 @@ public partial class DAOContractTests
 
     private async Task MockVoteScheme()
     {
-        var voteSchemeId = await GetVoteSchemeId(VoteMechanism.UniqueVote);
-        var voteScheme = await VoteContractStub.GetVoteScheme.CallAsync(voteSchemeId);
-        if (voteScheme == null || voteScheme.SchemeId == null)
-        {
-            await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
-            {
-                VoteMechanism = VoteMechanism.UniqueVote
-            });
-        }
-
-        voteSchemeId = await GetVoteSchemeId(VoteMechanism.TokenBallot);
-        voteScheme = await VoteContractStub.GetVoteScheme.CallAsync(voteSchemeId);
-        if (voteScheme == null || voteScheme.SchemeId == null)
-        {
-            await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
-            {
-                VoteMechanism = VoteMechanism.TokenBallot
-            });
-        }
+        await CreateVoteScheme();
     }
 
     /// <summary>
@@ -255,8 +237,7 @@ public partial class DAOContractTests
     /// <returns></returns>
     private async Task<Hash> GetVoteSchemeId(VoteMechanism voteMechanism)
     {
-        return HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(VoteContractAddress),
-            HashHelper.ComputeFrom(voteMechanism.ToString()));
+        return VoteMechanism.UniqueVote == voteMechanism ? UniqueVoteVoteSchemeId : TokenBallotVoteSchemeId;
     }
 
     internal CreateProposalInput MockCreateProposalInput(ExecuteTransaction executeTransaction)

@@ -101,9 +101,6 @@ public partial class GovernanceContract
             GovernanceContractConstants.MaxProposalDescriptionUrlLength && ValidateForumUrl(proposalBasicInfo.ForumUrl),
             "Invalid proposal description or forum url.");
         
-        AssertNumberInRange(proposalBasicInfo.ActiveTimePeriod, GovernanceContractConstants.MinActiveTimePeriod,
-            GovernanceContractConstants.MaxActiveTimePeriod, "ProposalBasicInfo.ActiveTimePeriod");
-        
         scheme = State.GovernanceSchemeMap[proposalBasicInfo.SchemeAddress];
         var schemeAddressList = State.DaoSchemeAddressList[proposalBasicInfo.DaoId];
         Assert(
