@@ -283,7 +283,7 @@ public class VoteContractTestBase : TestBase
 
     internal async Task<IExecutionResult<Empty>> Vote(long amount, VoteOption voteOption, Hash votingItemId)
     {
-        var result = await VoteContractStub.Vote.SendAsync(new VoteInput { VoteAmount = amount, VoteOption = (int)voteOption, VotingItemId = votingItemId });
+        var result = await VoteContractStub.Vote.SendAsync(new VoteInput { VoteAmount = amount, VoteOption = (int)voteOption, VotingItemId = votingItemId, Memo = "memo"});
         result.TransactionResult.Error.ShouldBe("");
         return result;
     }
