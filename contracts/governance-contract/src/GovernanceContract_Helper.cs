@@ -277,7 +277,9 @@ public partial class GovernanceContract
         }
         else
         {
-            Assert(activeEndTime > activeStartTime && activeStartTime >= Context.CurrentBlockTime, "Invalid active time params.");
+            Assert(activeEndTime > activeStartTime,
+                "Invalid active time period, active start time larger than or equal to active end time.");
+            Assert(activeStartTime >= Context.CurrentBlockTime, "Invalid active start time, early than block time.");
             Assert( activeStartTime.AddHours(GovernanceContractConstants.MinActiveTimePeriod) <= activeEndTime, 
                 "Invalid active params, active period should no less than one hour.");
             Assert( activeStartTime.AddHours(GovernanceContractConstants.MaxActiveTimePeriod) >= activeEndTime, 
