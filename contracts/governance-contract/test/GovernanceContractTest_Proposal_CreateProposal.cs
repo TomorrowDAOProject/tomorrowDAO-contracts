@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AElf.CSharp.Core.Extension;
 using AElf.Types;
+using Google.Protobuf.WellKnownTypes;
 using Shouldly;
 using TomorrowDAO.Contracts.Vote;
 using Xunit;
@@ -98,7 +101,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao()
     {
-        var input = MockCreateProposalInput(1 * 24);
+        var input = MockCreateProposalInput(1 * 24 * 60 * 60);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,
@@ -132,7 +135,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao_BelowThreshold()
     {
-        var input = MockCreateProposalInput(1 * 24);
+        var input = MockCreateProposalInput(1 * 24 * 60 * 60);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,
@@ -162,5 +165,116 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         output.ShouldNotBeNull();
         output.ProposalStage.ShouldBe(ProposalStage.Finished);
         output.ProposalStatus.ShouldBe(ProposalStatus.BelowThreshold);
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_1()
+    {
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(7 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
+        
+        var input = MockCreateProposalInput(7 * 24, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Duplicated active period params.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_2()
+    {
+        var input = MockCreateProposalInput(16 * 24 * 60 * 60, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("ProposalBasicInfo.ActiveTimePeriod should be between");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_3()
+    {
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active time period, active start time larger than or equal to active end time.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_4()
+    {
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(-2);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active time period, active start time larger than or equal to active end time.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_5()
+    {
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now.AddDays(-1000));
+        var endTime = startTime.AddHours(2);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active start time, early than block time.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Invalid_Active_params_6()
+    {
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(16 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        result.TransactionResult.Error.ShouldContain("Invalid active params, active period should no more than fifteen day.");
+    }
+    
+    [Fact]
+    public async Task CreateProposalTest_Valid_Active_params()
+    {
+        var now = DateTime.UtcNow.AddHours(1);
+        var startTime = RoundedToSecond(now);
+        var endTime = startTime.AddHours(7 * 24);
+        var activeStartTime = Time(startTime);
+        var activeEndTime = Time(endTime);
+        var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
+        var result = await CreateProposalAsync(input, false, VoteMechanism.TokenBallot);
+        result.ShouldNotBeNull();
+        var proposalCreatedEvent = result.TransactionResult.Logs.Single(x => x.Name.Contains(nameof(ProposalCreated)));
+        proposalCreatedEvent.ShouldNotBeNull();
+        var proposalCreated = ProposalCreated.Parser.ParseFrom(proposalCreatedEvent.NonIndexed);
+        proposalCreated.ActiveStartTime.ShouldBe(Timestamp.FromDateTime(startTime));
+        proposalCreated.ActiveEndTime.ShouldBe(Timestamp.FromDateTime(endTime));
+    }
+
+    private static long Time(DateTime time)
+    {
+        return (long)(time - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+    }
+
+    private DateTime RoundedToSecond(DateTime time)
+    {
+        return new DateTime(
+            time.Year,
+            time.Month,
+            time.Day,
+            time.Hour,
+            time.Minute,
+            time.Second,
+            DateTimeKind.Utc
+        );
     }
 }

@@ -1,8 +1,6 @@
-using System;
 using System.Linq;
 using AElf;
 using AElf.Contracts.MultiToken;
-using AElf.CSharp.Core;
 using AElf.Sdk.CSharp;
 using AElf.Types;
 using Google.Protobuf.WellKnownTypes;
@@ -67,8 +65,8 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         Assert(votingItem.StartTimestamp <= Context.CurrentBlockTime, "Vote not begin.");
         Assert(votingItem.EndTimestamp >= Context.CurrentBlockTime, "Vote ended.");
         var daoInfo = AssertDaoSubsist(votingItem.DaoId);
-        AssertVotingRecord(votingItem.VotingItemId, Context.Sender);
         var voteScheme = AssertVoteScheme(votingItem.SchemeId);
+        AssertVotingRecord(votingItem.VotingItemId, Context.Sender, voteScheme, input);
 
         if (GovernanceMechanism.HighCouncil.ToString() == votingItem.GovernanceMechanism)
         {
@@ -88,16 +86,18 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         switch (voteScheme.VoteMechanism)
         {
             case VoteMechanism.TokenBallot: // 1t1v
-                TokenBallotTransfer(votingItem, input);
-                AddAmount(votingItem, input.VoteAmount);
+                TokenBallotTransfer(votingItem, input, voteScheme);
+                AddAmount(votingItem, input.VoteAmount, voteScheme);
                 break;
             case VoteMechanism.UniqueVote: // 1a1v
                 Assert(input.VoteAmount == VoteContractConstants.UniqueVoteVoteAmount, "Invalid vote amount");
                 break;
         }
 
-        var voteId = AddVotingRecords(input);
-        UpdateVotingResults(input);
+        var voteId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input), HashHelper.ComputeFrom(Context.Sender), 
+            Context.TransactionId);
+        var newVoter = AddVotingRecords(input, voteId);
+        UpdateVotingResults(input, newVoter? 1 : 0);
         Context.Fire(new Voted
         {
             VotingItemId = votingItem.VotingItemId,
@@ -109,7 +109,8 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
             DaoId = votingItem.DaoId,
             VoteMechanism = voteScheme.VoteMechanism,
             StartTime = votingItem.StartTimestamp,
-            EndTime = votingItem.EndTimestamp
+            EndTime = votingItem.EndTimestamp,
+            Memo = input.Memo
         });
         return new Empty();
     }
@@ -133,14 +134,25 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         return new Empty();
     }
 
-    private void TokenBallotTransfer(VotingItem votingItem, VoteInput input)
+    private void TokenBallotTransfer(VotingItem votingItem, VoteInput input, VoteScheme voteScheme)
     {
-        var virtualAddress = GetVirtualAddress(Context.Sender, votingItem.DaoId);
-        TransferIn(virtualAddress, Context.Sender, votingItem.AcceptedSymbol, input.VoteAmount);
+        if (voteScheme.WithoutLockToken)
+        {
+            AssertTokenBalance(Context.Sender, votingItem.AcceptedSymbol, input.VoteAmount);
+        }
+        else
+        {
+            var virtualAddress = GetVirtualAddress(Context.Sender, votingItem.DaoId);
+            TransferIn(virtualAddress, Context.Sender, votingItem.AcceptedSymbol, input.VoteAmount);
+        }
     }
 
-    private void AddAmount(VotingItem votingItem, long amount)
+    private void AddAmount(VotingItem votingItem, long amount, VoteScheme voteScheme)
     {
+        if (voteScheme.WithoutLockToken)
+        {
+            return;
+        }
         State.DaoRemainAmounts[Context.Sender][votingItem.DaoId] += amount;
         State.DaoProposalRemainAmounts[Context.Sender][GetDaoProposalId(votingItem.DaoId, votingItem.VotingItemId)] =
             amount;
@@ -155,27 +167,38 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         }
     }
 
-    private Hash AddVotingRecords(VoteInput input)
+    private bool AddVotingRecords(VoteInput input, Hash voteId)
     {
-        var voteId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input),
-            HashHelper.ComputeFrom(Context.Sender));
-        State.VotingRecords[input.VotingItemId][Context.Sender] = new VotingRecord
+        var votingRecord = State.VotingRecords[input.VotingItemId][Context.Sender];
+        var newVoter = votingRecord == null;
+        if (newVoter)
         {
-            VotingItemId = input.VotingItemId,
-            Voter = Context.Sender,
-            Amount = input.VoteAmount,
-            VoteTimestamp = Context.CurrentBlockTime,
-            Option = (VoteOption)input.VoteOption,
-            VoteId = voteId
-        };
-        return voteId;
+            State.VotingRecords[input.VotingItemId][Context.Sender] = new VotingRecord
+            {
+                VotingItemId = input.VotingItemId,
+                Voter = Context.Sender,
+                Amount = input.VoteAmount,
+                VoteTimestamp = Context.CurrentBlockTime,
+                Option = (VoteOption)input.VoteOption,
+                VoteId = voteId
+            };
+        }
+        else
+        {
+            votingRecord.Amount += input.VoteAmount;
+            votingRecord.VoteTimestamp = Context.CurrentBlockTime;
+            votingRecord.VoteId = voteId;
+            State.VotingRecords[input.VotingItemId][Context.Sender] = votingRecord;
+        }
+
+        return newVoter;
     }
 
-    private void UpdateVotingResults(VoteInput input)
+    private void UpdateVotingResults(VoteInput input, long deltaVoter)
     {
         var votingResult = State.VotingResults[input.VotingItemId];
         votingResult.VotesAmount += input.VoteAmount;
-        votingResult.TotalVotersCount += 1;
+        votingResult.TotalVotersCount += deltaVoter;
         switch (input.VoteOption)
         {
             case (int)VoteOption.Approved:

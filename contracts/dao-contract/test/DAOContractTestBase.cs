@@ -26,8 +26,8 @@ public class DAOContractTestBase : TestBase
     
     public const int UniqueVoteVoteAmount = 1;
     public const long OneElf = 1_00000000;
-    public const long ActiveTimePeriod = 7 * 24; //day
-    public const long VetoActiveTimePeriod = 3 * 24;
+    public const long ActiveTimePeriod = 7 * 24 * 60 * 60; //day
+    public const long VetoActiveTimePeriod = 3 * 24 * 60 * 60;
     protected Hash UniqueVoteVoteSchemeId; //1a1v
     protected Hash TokenBallotVoteSchemeId; //1t1v
     protected string TokenElf = "ELF";
@@ -131,30 +131,31 @@ public class DAOContractTestBase : TestBase
         await InitializeDAO();
         await InitializeElection();
         await InitializeVote();
-        await CreateVoteScheme(VoteMechanism.UniqueVote);
-        await CreateVoteScheme(VoteMechanism.TokenBallot);
+        await CreateVoteScheme();
         await CreateDao("DAO");
         await CreateDao("NetworkDAO", true);
         await CreateDao("Organization DAO", false, 2);
     }
 
-    private async Task CreateVoteScheme(VoteMechanism voteMechanism)
+    protected async Task CreateVoteScheme()
     {
-        var result = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        if (UniqueVoteVoteSchemeId == null)
         {
-            VoteMechanism = voteMechanism
-        });
-
-        var log = GetLogEvent<VoteSchemeCreated>(result.TransactionResult);
-        switch (voteMechanism)
+            var result = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+            {
+                VoteMechanism = VoteMechanism.UniqueVote
+            });
+            UniqueVoteVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result.TransactionResult).VoteSchemeId;
+        }
+        
+        if (TokenBallotVoteSchemeId == null)
         {
-            case VoteMechanism.UniqueVote:
-                UniqueVoteVoteSchemeId = log.VoteSchemeId;
-                break;
-            case VoteMechanism.TokenBallot:
-                TokenBallotVoteSchemeId = log.VoteSchemeId;
-                break;
-        } 
+            var result = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+            {
+                VoteMechanism = VoteMechanism.TokenBallot
+            });
+            TokenBallotVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result.TransactionResult).VoteSchemeId;
+        }
     }
 
     public async Task CreateDao(string daoName, bool isNetworkDao = false, int governanceMechanism = 0)

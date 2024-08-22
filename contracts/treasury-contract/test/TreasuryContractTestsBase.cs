@@ -24,7 +24,10 @@ public class TreasuryContractTestsBase : TestBase
 {
     protected const string DefaultGovernanceToken = "ELF";
     protected const long OneElfAmount = 100000000;
-    public const long ActiveTimePeriod = 7 * 24;
+    public const long ActiveTimePeriod = 7 * 24 * 60 * 60;
+    protected Hash UniqueVoteVoteSchemeId; //1a1v
+    protected Hash TokenBallotVoteSchemeId; //1t1v
+    protected Hash TokenBallotVoteSchemeId_NoLock_DayVote; 
     
     internal IBlockTimeProvider BlockTimeProvider;
     internal Hash DefaultDaoId = HashHelper.ComputeFrom("DaoId");
@@ -266,18 +269,24 @@ public class TreasuryContractTestsBase : TestBase
 
     #region Vote
 
-    protected async Task<Hash> MockVoteScheme()
+    protected async Task MockVoteScheme()
     {
-        await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        var result1 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
             VoteMechanism = VoteMechanism.UniqueVote
         });
-        await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        var result2 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
             VoteMechanism = VoteMechanism.TokenBallot
         });
-
-        return await GetVoteSchemeId(VoteMechanism.UniqueVote);
+        var result3 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        {
+            VoteMechanism = VoteMechanism.TokenBallot, WithoutLockToken = true, VoteStrategy = VoteStrategy.DayDistinct
+        });
+        
+        UniqueVoteVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result1.TransactionResult).VoteSchemeId;
+        TokenBallotVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result2.TransactionResult).VoteSchemeId;
+        TokenBallotVoteSchemeId_NoLock_DayVote = GetLogEvent<VoteSchemeCreated>(result3.TransactionResult).VoteSchemeId;
     }
 
     /// <summary>
@@ -287,8 +296,7 @@ public class TreasuryContractTestsBase : TestBase
     /// <returns></returns>
     internal async Task<Hash> GetVoteSchemeId(VoteMechanism voteMechanism)
     {
-        return HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(VoteContractAddress),
-            HashHelper.ComputeFrom(voteMechanism.ToString()));
+        return VoteMechanism.UniqueVote == voteMechanism ? UniqueVoteVoteSchemeId : TokenBallotVoteSchemeId;
     }
 
     internal async Task<IExecutionResult<Empty>> VoteProposalAsync(Hash proposalId, long amount, VoteOption voteOption)

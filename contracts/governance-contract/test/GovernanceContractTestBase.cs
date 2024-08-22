@@ -24,6 +24,9 @@ public class GovernanceContractTestBase : TestBase
     internal readonly string DefaultGovernanceToken = "ELF";
     internal readonly long OneElfAmount = 100000000;
     internal Hash DefaultDaoId = HashHelper.ComputeFrom("DaoId");
+    protected Hash UniqueVoteVoteSchemeId; //1a1v
+    protected Hash TokenBallotVoteSchemeId; //1t1v
+    protected Hash TokenBallotVoteSchemeId_NoLock_DayVote; 
 
     internal readonly GovernanceSchemeThreshold DefaultSchemeThreshold = new GovernanceSchemeThreshold
     {
@@ -248,10 +251,11 @@ public class GovernanceContractTestBase : TestBase
     /// <param name="withException"></param>
     /// <param name="voteMechanism"></param>
     /// <param name="governanceMechanism"></param>
+    /// <param name="voteSchemeId"></param>
     /// <returns></returns>
     [Obsolete]
     internal async Task<IExecutionResult<Hash>> CreateProposalAsync(CreateProposalInput input, bool withException,
-        VoteMechanism voteMechanism = VoteMechanism.UniqueVote, int governanceMechanism = 0)
+        VoteMechanism voteMechanism = VoteMechanism.UniqueVote, int governanceMechanism = 0, Hash voteSchemeId = null)
     {
         await InitializeAllContract();
         var daoId = await MockDao(false, governanceMechanism);
@@ -260,7 +264,7 @@ public class GovernanceContractTestBase : TestBase
         addressList.Value.Count.ShouldBe(2);
         var schemeAddress = addressList.Value.LastOrDefault();
         await MockVoteScheme();
-        var voteMechanismId = await GetVoteSchemeId(voteMechanism);
+        var voteMechanismId = voteSchemeId != null ? voteSchemeId : await GetVoteSchemeId(voteMechanism);
 
         input.ProposalBasicInfo.DaoId = daoId;
         input.ProposalBasicInfo.SchemeAddress = schemeAddress;
@@ -377,18 +381,24 @@ public class GovernanceContractTestBase : TestBase
 
     #region Vote
 
-    internal async Task<Hash> MockVoteScheme()
+    internal async Task MockVoteScheme()
     {
-        await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        var result1 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
             VoteMechanism = VoteMechanism.UniqueVote
         });
-        await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        var result2 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
             VoteMechanism = VoteMechanism.TokenBallot
         });
-
-        return await GetVoteSchemeId(VoteMechanism.UniqueVote);
+        var result3 = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+        {
+            VoteMechanism = VoteMechanism.TokenBallot, WithoutLockToken = true, VoteStrategy = VoteStrategy.DayDistinct
+        });
+        
+        UniqueVoteVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result1.TransactionResult).VoteSchemeId;
+        TokenBallotVoteSchemeId = GetLogEvent<VoteSchemeCreated>(result2.TransactionResult).VoteSchemeId;
+        TokenBallotVoteSchemeId_NoLock_DayVote = GetLogEvent<VoteSchemeCreated>(result3.TransactionResult).VoteSchemeId;
     }
 
     /// <summary>
@@ -398,8 +408,7 @@ public class GovernanceContractTestBase : TestBase
     /// <returns></returns>
     private async Task<Hash> GetVoteSchemeId(VoteMechanism voteMechanism)
     {
-        return HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(VoteContractAddress),
-            HashHelper.ComputeFrom(voteMechanism.ToString()));
+        return VoteMechanism.UniqueVote == voteMechanism ? UniqueVoteVoteSchemeId : TokenBallotVoteSchemeId;
     }
 
     internal async Task<IExecutionResult<Empty>> VoteProposalAsync(Hash proposalId, long amount, VoteOption voteOption)
@@ -460,7 +469,8 @@ public class GovernanceContractTestBase : TestBase
         return executionResult.Output;
     }
 
-    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24)
+    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24 * 60 * 60, Hash voteSchemeId = null,
+        long activeStartTime = 0, long activeEndTime = 0)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
@@ -469,8 +479,10 @@ public class GovernanceContractTestBase : TestBase
             ProposalDescription = "ProposalDescription",
             ForumUrl = "https://www.ForumUrl.com",
             SchemeAddress = null,
-            VoteSchemeId = null,
-            ActiveTimePeriod = activeTimePeriod
+            VoteSchemeId = voteSchemeId,
+            ActiveTimePeriod = activeTimePeriod,
+            ActiveStartTime = activeStartTime,
+            ActiveEndTime = activeEndTime
         };
         var executeTransaction = new ExecuteTransaction
         {
@@ -488,7 +500,7 @@ public class GovernanceContractTestBase : TestBase
         return input;
     }
 
-    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3 * 24)
+    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3 * 24 * 60 * 60)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {

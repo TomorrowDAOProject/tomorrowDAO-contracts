@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AElf;
 using AElf.Contracts.MultiToken;
@@ -196,19 +197,24 @@ public partial class GovernanceContract
 
     private ProposalTime GetProposalTime(ProposalBasicInfo proposalBasicInfo, ProposalType proposalType)
     {
+        var activeStartTime = new Timestamp { Seconds = proposalBasicInfo.ActiveStartTime };
+        var activeEndTime = new Timestamp { Seconds = proposalBasicInfo.ActiveEndTime };
+        ValidActiveTime(proposalBasicInfo, activeStartTime, activeEndTime);
+        
         var timePeriod = GetProposalTimePeriod(proposalBasicInfo, proposalType);
+        var usePeriod = proposalBasicInfo.ActiveTimePeriod > 0;
         var proposalTime = new ProposalTime();
         switch (proposalType)
         {
             case ProposalType.Veto:
-                proposalTime.ActiveStartTime = Context.CurrentBlockTime;
-                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddHours(timePeriod.VetoActiveTimePeriod);
+                proposalTime.ActiveStartTime = usePeriod ? Context.CurrentBlockTime : activeStartTime;
+                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddSeconds(timePeriod.VetoActiveTimePeriod) : activeEndTime;
                 break;
             case ProposalType.Governance:
             case ProposalType.Advisory:
             default:
-                proposalTime.ActiveStartTime = Context.CurrentBlockTime;
-                proposalTime.ActiveEndTime = Context.CurrentBlockTime.AddHours(timePeriod.ActiveTimePeriod);
+                proposalTime.ActiveStartTime = usePeriod ? Context.CurrentBlockTime : activeStartTime;
+                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddSeconds(timePeriod.ActiveTimePeriod) : activeEndTime;
                 break;
         }
 
@@ -218,19 +224,19 @@ public partial class GovernanceContract
                 var scheme = GetScheme(proposalBasicInfo.SchemeAddress);
                 if (scheme.GovernanceMechanism == GovernanceMechanism.HighCouncil)
                 {
-                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddHours(timePeriod.PendingTimePeriod);
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddSeconds(timePeriod.PendingTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.ExecuteTimePeriod);
                 }
                 else
                 {
                     proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.ExecuteTimePeriod);
                 }
 
                 break;
             case ProposalType.Veto:
                 proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.VetoExecuteTimePeriod);
+                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.VetoExecuteTimePeriod);
                 break;
             case ProposalType.Advisory:
                 break;
@@ -258,6 +264,27 @@ public partial class GovernanceContract
         }
 
         return timePeriod;
+    }
+
+    private void ValidActiveTime(ProposalBasicInfo proposalBasicInfo, Timestamp activeStartTime, Timestamp activeEndTime)
+    {
+        var activeTimePeriod = proposalBasicInfo.ActiveTimePeriod;
+        if (activeTimePeriod > 0)
+        {
+            Assert(proposalBasicInfo.ActiveStartTime == 0 && proposalBasicInfo.ActiveEndTime == 0, "Duplicated active period params.");
+            AssertNumberInRange(activeTimePeriod, GovernanceContractConstants.MinActiveTimePeriod,
+                GovernanceContractConstants.MaxActiveTimePeriod, "ProposalBasicInfo.ActiveTimePeriod");
+        }
+        else
+        {
+            Assert(activeEndTime > activeStartTime,
+                "Invalid active time period, active start time larger than or equal to active end time.");
+            Assert(activeStartTime >= Context.CurrentBlockTime, "Invalid active start time, early than block time.");
+            Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MinActiveTimePeriod) <= activeEndTime, 
+                "Invalid active params, active period should no less than one hour.");
+            Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MaxActiveTimePeriod) >= activeEndTime, 
+                "Invalid active params, active period should no more than fifteen day.");
+        }
     }
 
     #endregion

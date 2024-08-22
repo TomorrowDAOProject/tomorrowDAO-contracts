@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using AElf;
-using AElf.Contracts.MultiToken;
 using Shouldly;
 using TomorrowDAO.Contracts.Governance;
 using Xunit;
@@ -64,6 +63,10 @@ namespace TomorrowDAO.Contracts.Vote
             NetworkDaoAdvisoryHc1A1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoHcSchemeAddress, UniqueVoteVoteSchemeId, "Invalid voteSchemeId.");
             NetworkDaoAdvisoryR1T1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoRSchemeAddress, TokenBallotVoteSchemeId);
             NetworkDaoAdvisoryHc1T1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoHcSchemeAddress, TokenBallotVoteSchemeId);
+            
+            // tg ranking 
+            // token dao && 1t1v && day vote
+            AdvisoryR1T1VProposalId_NoLock_DayVote = await CreateProposal(DaoId, ProposalType.Advisory, RSchemeAddress, TokenBallotVoteSchemeId_NoLock_DayVote);
         }
 
         [Fact]
@@ -91,7 +94,7 @@ namespace TomorrowDAO.Contracts.Vote
         }
         
         [Fact]
-        public async Task VoteTest()
+        public async Task VoteTest_1()
         {
             await RegisterTest();
             await ApproveElf(OneElf * 10, VoteContractAddress);
@@ -116,6 +119,33 @@ namespace TomorrowDAO.Contracts.Vote
             // await Vote(UniqueVoteVoteAmount, VoteOption.Rejected, NetworkDaoAdvisoryHc1A1VProposalId);
             await Vote(OneElf, VoteOption.Abstained, NetworkDaoAdvisoryR1T1VProposalId);
             await Vote(OneElf, VoteOption.Rejected, NetworkDaoAdvisoryHc1T1VProposalId);
+        }
+
+        [Fact]
+        public async Task VoteTest_2()
+        {
+            await RegisterTest();
+            
+            // tg ranking
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_NoLock_DayVote);
+            await GetDaoRemainAmount(DaoId, DefaultAddress, 0);
+            await GetDaoProposalRemainAmount(DaoId, DefaultAddress, AdvisoryR1T1VProposalId_NoLock_DayVote, 0);
+            var votingResult = await VoteContractStub.GetVotingResult.CallAsync(AdvisoryR1T1VProposalId_NoLock_DayVote);
+            votingResult.TotalVotersCount.ShouldBe(1);
+            votingResult.ApproveCounts.ShouldBe(OneElf);
+            votingResult.VotesAmount.ShouldBe(OneElf);
+            
+            await VoteException(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_NoLock_DayVote, "Voter already voted today.");
+            
+            BlockTimeProvider.SetBlockTime(3600 * 24 * 1 * 1000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_NoLock_DayVote);
+            votingResult = await VoteContractStub.GetVotingResult.CallAsync(AdvisoryR1T1VProposalId_NoLock_DayVote);
+            votingResult.TotalVotersCount.ShouldBe(1);
+            votingResult.ApproveCounts.ShouldBe(OneElf * 2);
+            votingResult.VotesAmount.ShouldBe(OneElf * 2);
+            
+            BlockTimeProvider.SetBlockTime(3600 * 24 * 7 * 1000);
+            await VoteException(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_NoLock_DayVote, "Vote ended.");
         }
 
         [Fact]
