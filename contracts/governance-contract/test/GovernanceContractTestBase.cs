@@ -469,7 +469,7 @@ public class GovernanceContractTestBase : TestBase
         return executionResult.Output;
     }
 
-    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24, Hash voteSchemeId = null,
+    internal CreateProposalInput MockCreateProposalInput(long activeTimePeriod = 7 * 24 * 60 * 60, Hash voteSchemeId = null,
         long activeStartTime = 0, long activeEndTime = 0)
     {
         var proposalBasicInfo = new ProposalBasicInfo
@@ -500,7 +500,7 @@ public class GovernanceContractTestBase : TestBase
         return input;
     }
 
-    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3 * 24)
+    internal CreateVetoProposalInput MockCreateVetoProposalInput(long activeTimePeriod = 3 * 24 * 60 * 60)
     {
         var proposalBasicInfo = new ProposalBasicInfo
         {
