@@ -44,4 +44,20 @@ public class IssueTest
         _testOutputHelper.WriteLine("IssueInput={0}", input.ToByteString().ToBase64());
         return Task.CompletedTask;
     }
+    
+    [Fact]
+    public Task GenerateIssueInputByteStringB()
+    {
+        var input = new IssueInput
+        {
+            Symbol = "TESTAGENTS",
+            Amount = 1000000000000,
+            Memo = "IssueTesting",
+            To = Address.FromBase58("w1s8hUonC8E1v2SkaNMnjwcRadw7xD8EythpnYUABFf367XJu")
+        };
+        _testOutputHelper.WriteLine("IssueInput={0}", input.ToByteString().ToBase64());
+        return Task.CompletedTask;
+    }
+    
+    
 }
