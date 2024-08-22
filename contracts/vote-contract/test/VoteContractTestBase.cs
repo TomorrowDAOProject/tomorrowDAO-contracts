@@ -24,8 +24,8 @@ public class VoteContractTestBase : TestBase
     
     public const int UniqueVoteVoteAmount = 1;
     public const long OneElf = 1_00000000;
-    public const long ActiveTimePeriod = 7 * 24;
-    public const long VetoActiveTimePeriod = 3 * 24;
+    public const long ActiveTimePeriod = 7 * 24 * 60 * 60;
+    public const long VetoActiveTimePeriod = 3 * 24 * 60 * 60;
     protected Hash UniqueVoteVoteSchemeId; //1a1v
     protected Hash TokenBallotVoteSchemeId; //1t1v
     protected Hash TokenBallotVoteSchemeId_NoLock_DayVote; 
