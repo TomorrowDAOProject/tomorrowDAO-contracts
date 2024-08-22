@@ -101,7 +101,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao()
     {
-        var input = MockCreateProposalInput(1 * 24);
+        var input = MockCreateProposalInput(1 * 24 * 60 * 60);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,
@@ -135,7 +135,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_MultisigDao_BelowThreshold()
     {
-        var input = MockCreateProposalInput(1 * 24);
+        var input = MockCreateProposalInput(1 * 24 * 60 * 60);
         var executionResult =
             await CreateProposalAsync(input, false,
                 GovernanceMechanism.Organization,
@@ -185,10 +185,10 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_2()
     {
-        var input = MockCreateProposalInput(16 * 24, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var input = MockCreateProposalInput(16 * 24 * 60 * 60, TokenBallotVoteSchemeId_NoLock_DayVote);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
-        result.TransactionResult.Error.ShouldContain("ProposalBasicInfo.ActiveTimePeriod should be between 1 and 360");
+        result.TransactionResult.Error.ShouldContain("ProposalBasicInfo.ActiveTimePeriod should be between");
     }
     
     [Fact]
@@ -197,7 +197,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
-        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+        result.TransactionResult.Error.ShouldContain("Invalid active time period, active start time larger than or equal to active end time.");
     }
     
     [Fact]
@@ -211,7 +211,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
-        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+        result.TransactionResult.Error.ShouldContain("Invalid active time period, active start time larger than or equal to active end time.");
     }
     
     [Fact]
@@ -225,7 +225,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
-        result.TransactionResult.Error.ShouldContain("Invalid active time params.");
+        result.TransactionResult.Error.ShouldContain("Invalid active start time, early than block time.");
     }
     
     [Fact]

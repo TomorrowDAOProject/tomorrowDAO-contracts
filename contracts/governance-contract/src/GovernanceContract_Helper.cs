@@ -208,13 +208,13 @@ public partial class GovernanceContract
         {
             case ProposalType.Veto:
                 proposalTime.ActiveStartTime = usePeriod ? Context.CurrentBlockTime : activeStartTime;
-                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddHours(timePeriod.VetoActiveTimePeriod) : activeEndTime;
+                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddSeconds(timePeriod.VetoActiveTimePeriod) : activeEndTime;
                 break;
             case ProposalType.Governance:
             case ProposalType.Advisory:
             default:
                 proposalTime.ActiveStartTime = usePeriod ? Context.CurrentBlockTime : activeStartTime;
-                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddHours(timePeriod.ActiveTimePeriod) : activeEndTime;
+                proposalTime.ActiveEndTime = usePeriod ? Context.CurrentBlockTime.AddSeconds(timePeriod.ActiveTimePeriod) : activeEndTime;
                 break;
         }
 
@@ -224,19 +224,19 @@ public partial class GovernanceContract
                 var scheme = GetScheme(proposalBasicInfo.SchemeAddress);
                 if (scheme.GovernanceMechanism == GovernanceMechanism.HighCouncil)
                 {
-                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddHours(timePeriod.PendingTimePeriod);
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime.AddSeconds(timePeriod.PendingTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.ExecuteTimePeriod);
                 }
                 else
                 {
                     proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.ExecuteTimePeriod);
+                    proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.ExecuteTimePeriod);
                 }
 
                 break;
             case ProposalType.Veto:
                 proposalTime.ExecuteStartTime = proposalTime.ActiveEndTime;
-                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddHours(timePeriod.VetoExecuteTimePeriod);
+                proposalTime.ExecuteEndTime = proposalTime.ExecuteStartTime.AddSeconds(timePeriod.VetoExecuteTimePeriod);
                 break;
             case ProposalType.Advisory:
                 break;
@@ -277,10 +277,12 @@ public partial class GovernanceContract
         }
         else
         {
-            Assert(activeEndTime > activeStartTime && activeStartTime >= Context.CurrentBlockTime, "Invalid active time params.");
-            Assert( activeStartTime.AddHours(GovernanceContractConstants.MinActiveTimePeriod) <= activeEndTime, 
+            Assert(activeEndTime > activeStartTime,
+                "Invalid active time period, active start time larger than or equal to active end time.");
+            Assert(activeStartTime >= Context.CurrentBlockTime, "Invalid active start time, early than block time.");
+            Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MinActiveTimePeriod) <= activeEndTime, 
                 "Invalid active params, active period should no less than one hour.");
-            Assert( activeStartTime.AddHours(GovernanceContractConstants.MaxActiveTimePeriod) >= activeEndTime, 
+            Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MaxActiveTimePeriod) >= activeEndTime, 
                 "Invalid active params, active period should no more than fifteen day.");
         }
     }

@@ -24,7 +24,7 @@ public class TreasuryContractTestsBase : TestBase
 {
     protected const string DefaultGovernanceToken = "ELF";
     protected const long OneElfAmount = 100000000;
-    public const long ActiveTimePeriod = 7 * 24;
+    public const long ActiveTimePeriod = 7 * 24 * 60 * 60;
     protected Hash UniqueVoteVoteSchemeId; //1a1v
     protected Hash TokenBallotVoteSchemeId; //1t1v
     protected Hash TokenBallotVoteSchemeId_NoLock_DayVote; 
