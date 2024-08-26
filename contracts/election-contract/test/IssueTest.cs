@@ -59,5 +59,19 @@ public class IssueTest
         return Task.CompletedTask;
     }
     
+    [Fact]
+    public Task GenerateIssueInputByteStringC()
+    {
+        var input = new IssueInput
+        {
+            Symbol = "AGENT",
+            Amount = 1000000000,
+            Memo = "Token Issuance",
+            To = Address.FromBase58("FMPBYuu4L73m2XnF13kJ1YCPtDKWoME5q6YtF8VQDZgo1sCDX")
+        };
+        _testOutputHelper.WriteLine("IssueInput={0}", input.ToByteString().ToBase64());
+        return Task.CompletedTask;
+    }
+    
     
 }
