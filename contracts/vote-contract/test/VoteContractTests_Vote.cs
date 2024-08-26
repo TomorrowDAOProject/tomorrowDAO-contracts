@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using AElf;
+using AElf.Types;
 using Shouldly;
 using TomorrowDAO.Contracts.Governance;
 using Xunit;
@@ -173,6 +174,22 @@ namespace TomorrowDAO.Contracts.Vote
                 Voter = DefaultAddress
             });
             _testOutputHelper.WriteLine("virtual address={0}", result);
+        }
+
+        [Fact]
+        public async Task Test()
+        {
+            var input = new VoteInput
+            {
+                VoteOption = 0,
+                VoteAmount = 100000000,
+                VotingItemId = Hash.LoadFromHex("7a9ce919a59f04ee235690d30689401b8fe260fc632250489f7f49246c67eb3b"),
+                Memo = "memo"
+            };
+            var sender = Address.FromBase58("izyQqrVvraoDC69HvUX8gEAgNrK3hWq9qhUKh5vh4MfzNjfc6");
+            var txId = Hash.LoadFromHex("d4676644fd2c142a7227e8b62c5093573cbfb74dfd6f5da03925c382e97b9ccc");
+            var voteId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input),  HashHelper.ComputeFrom(sender), txId);
+            _testOutputHelper.WriteLine("voteid1={0}", voteId.ToHex());
         }
     }
     

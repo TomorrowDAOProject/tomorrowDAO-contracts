@@ -94,12 +94,18 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
                 break;
         }
 
+        var a = Context.TransactionId;
+        var b = HashHelper.ComputeFrom(input);
+        var c = HashHelper.ComputeFrom(Context.Sender);
         var voteId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(input), HashHelper.ComputeFrom(Context.Sender), 
             Context.TransactionId);
         var newVoter = AddVotingRecords(input, voteId);
         UpdateVotingResults(input, newVoter? 1 : 0);
         Context.Fire(new Voted
         {
+            TxId = a,
+            InputHash = b,
+            SenderHash = c,
             VotingItemId = votingItem.VotingItemId,
             Voter = Context.Sender,
             Amount = input.VoteAmount,

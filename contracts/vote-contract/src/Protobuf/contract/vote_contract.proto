@@ -282,6 +282,9 @@ message Voted {
   google.protobuf.Timestamp start_time = 9;
   google.protobuf.Timestamp end_time = 10;
   string memo = 11;
+  aelf.Hash tx_id = 12;
+  aelf.Hash input_hash = 13;
+  aelf.Hash sender_hash = 14;
 }
 
 message Withdrawn {
