@@ -14,6 +14,20 @@ The following command will clone TomorrowDAO Contract into a folder. Please open
 ```Bash
 git clone https://github.com/TomorrowDAOProject/tomorrowDAO-contracts
 ```
+### Test
+
+You can easily run unit tests on TomorrowDAO Contracts. Navigate to the TomorrowDAOContracts.contracts and run:
+
+```Bash
+cd /dao-contract
+dotnet test
+cd ../governance-contract
+dotnet test
+cd ../treasury-contract
+dotnet test
+cd ../vote-contract
+dotnet test
+```
 
 ## Usage
 
