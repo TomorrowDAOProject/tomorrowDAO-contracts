@@ -1,6 +1,6 @@
 # TomorrowDAO-contracts
 
-The TomorrowDAO Contract is a new and cool smart contract wallet in aelf ecosystem that provides a familiar Web2 experience for controlling your Web3 identities and assets. It allows users to protect their identities and assets with guardians they trust. TomorrowDAO enables the management of devices/guardians at risk so that the owners keep control over their possessions. It also synchronizes users' identities through all aelf's chains. The contract is built on the aelf blockchain, a high-performance blockchain platform that uses a unique consensus algorithm called the aelf's Delegated Proof of Stake (AEDPoS).
+The TomorrowDAO Contract is a new and cool smart contract wallet in aelf ecosystem that allows users to create and manage their own DAOs. Within Tomorrow DAO, any user can establish their own DAO, choose between the use of FT or NFT as governance tokens, and invite members to participate in DAO governance. Users can create proposals and vote on decisions within their DAO, as well as deposit funds into the DAO's treasury to manage the DAO. Tomorrow DAO also provides a user-friendly front-end interface, making it easier for users to initiate governance proposals and execute smart contract functions.
 
 ## Installation
 
