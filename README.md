@@ -32,7 +32,7 @@ We welcome contributions to the TomorrowDAO Contract project. If you would like 
 
 ## License
 
-TomorrowDAO Contract is licensed under [MIT].
+TomorrowDAO Contract is licensed under [MIT](https://github.com/TomorrowDAOProject/tomorrowDAO-contracts/blob/master/README.md).
 
 ## Contact
 
