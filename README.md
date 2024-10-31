@@ -33,9 +33,9 @@ dotnet test
 
 The TomorrowDAO Contract provides the following modules:
 
-- `dao`: Create and manage your dao.
-- `governance`: Manage the proposal of dao.
-- `treasury`: Manage the treasury of dao.
+- `dao`: Create and manage your DAO.
+- `governance`: Manage the proposal of DAO.
+- `treasury`: Manage the treasury of DAO.
 - `vote`: Manage the vote of proposal.
 
 To use these modules, you must first deploy the TomorrowDAO Contract on aelf blockchain. Once it's deployed, you can interact with the contract using any aelf-compatible wallet or client.
