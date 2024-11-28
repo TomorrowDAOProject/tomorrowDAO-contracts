@@ -5,7 +5,7 @@ public static class GovernanceContractConstants
     public const int AbstractVoteTotal = 10000;
     public const int DefaultActiveTimePeriod = 7 * 24 * 60 * 60;
     public const int MinActiveTimePeriod = 1 * 60 * 60;
-    public const int MaxActiveTimePeriod = 15 * 24 * 60 * 60;
+    public const int MaxActiveTimePeriod = 60 * 24 * 60 * 60;
     public const int MinPendingTimePeriod = 5 * 24 * 60 * 60;
     public const int MaxPendingTimePeriod = 7 * 24 * 60 * 60;
     public const int MinExecuteTimePeriod = 3 * 24 * 60 * 60;
