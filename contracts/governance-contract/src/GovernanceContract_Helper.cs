@@ -283,7 +283,7 @@ public partial class GovernanceContract
             Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MinActiveTimePeriod) <= activeEndTime, 
                 "Invalid active params, active period should no less than one hour.");
             Assert( activeStartTime.AddSeconds(GovernanceContractConstants.MaxActiveTimePeriod) >= activeEndTime, 
-                "Invalid active params, active period should no more than sixty day.");
+                "Invalid active params, active period should no more than 180 day.");
         }
     }
 

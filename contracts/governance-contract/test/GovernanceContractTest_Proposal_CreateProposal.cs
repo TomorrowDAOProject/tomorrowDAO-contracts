@@ -185,7 +185,7 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     [Fact]
     public async Task CreateProposalTest_Invalid_Active_params_2()
     {
-        var input = MockCreateProposalInput(61 * 24 * 60 * 60, TokenBallotVoteSchemeId_NoLock_DayVote);
+        var input = MockCreateProposalInput(181 * 24 * 60 * 60, TokenBallotVoteSchemeId_NoLock_DayVote);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
         result.TransactionResult.Error.ShouldContain("ProposalBasicInfo.ActiveTimePeriod should be between");
@@ -233,13 +233,13 @@ public class GovernanceContractTestProposalCreateProposal : GovernanceContractTe
     {
         var now = DateTime.UtcNow.AddHours(1);
         var startTime = RoundedToSecond(now);
-        var endTime = startTime.AddHours(61 * 24);
+        var endTime = startTime.AddHours(181 * 24);
         var activeStartTime = Time(startTime);
         var activeEndTime = Time(endTime);
         var input = MockCreateProposalInput(0, TokenBallotVoteSchemeId_NoLock_DayVote, activeStartTime, activeEndTime);
         var result = await CreateProposalAsync(input, true, VoteMechanism.TokenBallot);
         result.ShouldNotBeNull();
-        result.TransactionResult.Error.ShouldContain("Invalid active params, active period should no more than sixty day.");
+        result.TransactionResult.Error.ShouldContain("Invalid active params, active period should no more than 180 day.");
     }
     
     [Fact]
