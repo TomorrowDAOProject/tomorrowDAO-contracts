@@ -75,6 +75,45 @@ namespace TomorrowDAO.Contracts.Vote
             });
             result.TransactionResult.Error.ShouldContain("VoteScheme already exists.");
         }
+
+        [Fact]
+        public async Task CreateVoteSchemeTest_DailyNVotes()
+        {
+            var result = await InitializeVote();
+            result.TransactionResult.Error.ShouldBe("");
+            
+            result = await VoteContractStub.CreateVoteScheme.SendWithExceptionAsync(new CreateVoteSchemeInput
+            {
+                VoteMechanism = VoteMechanism.UniqueVote,
+                WithoutLockToken = true,
+                VoteStrategy = VoteStrategy.DailyNVotes,
+                VoteCount = 0
+            });
+            result.TransactionResult.Error.ShouldContain("Invalid VoteCount.");
+
+            result = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
+            {
+                VoteMechanism = VoteMechanism.TokenBallot,
+                WithoutLockToken = true,
+                VoteStrategy = VoteStrategy.DailyNVotes,
+                VoteCount = 10
+            });
+            result.TransactionResult.Error.ShouldBe("");
+            var logEvent = result.TransactionResult.Logs.Single(x => x.Name.Contains(nameof(VoteSchemeCreated)));
+            var voteScheme = VoteSchemeCreated.Parser.ParseFrom(logEvent.NonIndexed);
+            voteScheme.VoteMechanism.ShouldBe(VoteMechanism.TokenBallot);
+            voteScheme.VoteStrategy.ShouldBe(VoteStrategy.DailyNVotes);
+            voteScheme.VoteCount.ShouldBe(10);
+            
+            result = await VoteContractStub.CreateVoteScheme.SendWithExceptionAsync(new CreateVoteSchemeInput
+            {
+                VoteMechanism = VoteMechanism.TokenBallot,
+                WithoutLockToken = true,
+                VoteStrategy = VoteStrategy.DailyNVotes,
+                VoteCount = 10
+            });
+            result.TransactionResult.Error.ShouldContain("VoteScheme already exists.");
+        }
     }
     
 }

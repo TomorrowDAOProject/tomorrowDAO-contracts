@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using AElf;
 using Shouldly;
@@ -63,10 +64,11 @@ namespace TomorrowDAO.Contracts.Vote
             NetworkDaoAdvisoryHc1A1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoHcSchemeAddress, UniqueVoteVoteSchemeId, "Invalid voteSchemeId.");
             NetworkDaoAdvisoryR1T1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoRSchemeAddress, TokenBallotVoteSchemeId);
             NetworkDaoAdvisoryHc1T1VProposalId = await CreateProposal(NetworkDaoId, ProposalType.Advisory, NetworkDaoHcSchemeAddress, TokenBallotVoteSchemeId);
-            
+
             // tg ranking 
             // token dao && 1t1v && day vote
             AdvisoryR1T1VProposalId_NoLock_DayVote = await CreateProposal(DaoId, ProposalType.Advisory, RSchemeAddress, TokenBallotVoteSchemeId_NoLock_DayVote);
+            AdvisoryR1T1VProposalId_DailyNVote = await CreateProposal(DaoId, ProposalType.Advisory, RSchemeAddress, TokenBallotVoteSchemeId_DailyNVote);
         }
 
         [Fact]
@@ -173,6 +175,46 @@ namespace TomorrowDAO.Contracts.Vote
                 Voter = DefaultAddress
             });
             _testOutputHelper.WriteLine("virtual address={0}", result);
+        }
+
+        [Fact]
+        public async Task VoteTest_DailyNVotes()
+        {
+            await RegisterTest();
+
+            // tg ranking
+            BlockTimeProvider.SetBlockTime(3600 * 1000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            await GetDaoRemainAmount(DaoId, DefaultAddress, 0);
+            await GetDaoProposalRemainAmount(DaoId, DefaultAddress, AdvisoryR1T1VProposalId_DailyNVote, 0);
+            var votingResult = await VoteContractStub.GetVotingResult.CallAsync(AdvisoryR1T1VProposalId_DailyNVote);
+            votingResult.TotalVotersCount.ShouldBe(1);
+            votingResult.ApproveCounts.ShouldBe(OneElf);
+            votingResult.VotesAmount.ShouldBe(OneElf);
+            
+            BlockTimeProvider.SetBlockTime( 10 * 1000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            votingResult = await VoteContractStub.GetVotingResult.CallAsync(AdvisoryR1T1VProposalId_DailyNVote);
+            votingResult.TotalVotersCount.ShouldBe(1);
+            votingResult.ApproveCounts.ShouldBe(OneElf * 2);
+            votingResult.VotesAmount.ShouldBe(OneElf * 2);
+            
+            BlockTimeProvider.SetBlockTime(24 * 3600 * 1000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            BlockTimeProvider.SetBlockTime(10000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            BlockTimeProvider.SetBlockTime(10000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            BlockTimeProvider.SetBlockTime(10000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            BlockTimeProvider.SetBlockTime(10000);
+            await Vote(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote);
+            BlockTimeProvider.SetBlockTime(10000);
+            await VoteException(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote, "Voter can cast up to 500000000 votes per day");
+
+            BlockTimeProvider.SetBlockTime(3600 * 24 * 7 * 1000);
+            await VoteException(OneElf, VoteOption.Approved, AdvisoryR1T1VProposalId_DailyNVote, "Vote ended.");
+            
         }
     }
     
