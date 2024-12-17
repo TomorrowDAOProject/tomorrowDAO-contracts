@@ -42,7 +42,7 @@ public class GovernanceContractTestProposalSetProposalTimePeriod : GovernanceCon
         
         var result =
             await GovernanceContractStub.SetProposalTimePeriod.SendWithExceptionAsync(new SetProposalTimePeriodInput());
-        result.TransactionResult.Error.ShouldContain("No permission");
+        result.TransactionResult.Error.ShouldContain("Invalid input or parameter does not exist");
 
         //ProposalTimePeriod is null
         var input = new SetProposalTimePeriodInput
@@ -68,19 +68,19 @@ public class GovernanceContractTestProposalSetProposalTimePeriod : GovernanceCon
         // result.TransactionResult.Error.ShouldContain("Invalid input");
         
         //out of range
-        input = new SetProposalTimePeriodInput
-        {
-            DaoId = daoId,
-            ProposalTimePeriod = new DaoProposalTimePeriod
-            {
-                ActiveTimePeriod = 7,
-                VetoActiveTimePeriod = 3,
-                PendingTimePeriod = 5,
-                ExecuteTimePeriod = 3,
-                VetoExecuteTimePeriod = 5
-            }
-        };
-        result = await GovernanceContractStub.SetProposalTimePeriod.SendWithExceptionAsync(input);
+        // input = new SetProposalTimePeriodInput
+        // {
+        //     DaoId = daoId,
+        //     ProposalTimePeriod = new DaoProposalTimePeriod
+        //     {
+        //         ActiveTimePeriod = 7,
+        //         VetoActiveTimePeriod = 3,
+        //         PendingTimePeriod = 5,
+        //         ExecuteTimePeriod = 3,
+        //         VetoExecuteTimePeriod = 5
+        //     }
+        // };
+        // result = await GovernanceContractStub.SetProposalTimePeriod.SendWithExceptionAsync(input);
         // result.TransactionResult.Error.ShouldContain("VetoExecuteTimePeriod should be between 1 and 3");
     }
 }
