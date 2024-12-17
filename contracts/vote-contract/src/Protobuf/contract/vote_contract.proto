@@ -58,7 +58,7 @@ message VoteScheme {
   VoteMechanism vote_mechanism = 3;
   bool without_lock_token = 4;
   VoteStrategy vote_strategy = 5;
-  int32 VoteCount = 6;
+  int32 vote_count = 6;
 }
 
 enum VoteMechanism {
@@ -189,7 +189,7 @@ message CreateVoteSchemeInput {
   VoteMechanism vote_mechanism = 1;
   bool without_lock_token = 2;
   VoteStrategy vote_strategy = 3;
-  int32 VoteCount = 4;
+  int32 vote_count = 4;
 }
 
 message VotingRegisterInput {
@@ -258,7 +258,7 @@ message VoteSchemeCreated {
   VoteMechanism vote_mechanism = 2;
   bool without_lock_token = 4;
   VoteStrategy vote_strategy = 5;
-  int32 VoteCount = 6;
+  int32 vote_count = 6;
 }
 
 message VotingItemRegistered {
