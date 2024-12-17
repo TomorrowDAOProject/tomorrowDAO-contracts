@@ -78,7 +78,7 @@ public partial class VoteContract
         {
             Assert(votingRecord == null, "Voter already voted.");
         }
-        else
+        else if (VoteStrategy.DayDistinct == voteScheme.VoteStrategy)
         {
             if (votingRecord == null)
             {
@@ -87,6 +87,18 @@ public partial class VoteContract
             var formatVoteTime = votingRecord.VoteTimestamp.ToDateTime().ToString(VoteContractConstants.DayFormatString);
             var formatNow = Context.CurrentBlockTime.ToDateTime().ToString(VoteContractConstants.DayFormatString);
             Assert(string.CompareOrdinal(formatVoteTime, formatNow) < 0, "Voter already voted today.");
+        } else if (VoteStrategy.DailyNVotes == voteScheme.VoteStrategy)
+        {
+            if (votingRecord?.VoteDetails?.Value == null || votingRecord.VoteDetails.Value.Count == 0)
+            {
+                return;
+            }
+
+            var today = Context.CurrentBlockTime.ToDateTime().Date;
+            var totalVoteAmount = votingRecord.VoteDetails.Value
+                .Where(vote => vote.VoteTimestamp.ToDateTime().Date == today).Sum(vote => vote.Amount);
+            Assert(totalVoteAmount + input.VoteAmount <= voteScheme.VoteCount, 
+                $"Voter can cast up to {voteScheme.VoteCount} votes per day");
         }
     }
 
