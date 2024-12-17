@@ -28,7 +28,8 @@ public class VoteContractTestBase : TestBase
     public const long VetoActiveTimePeriod = 3 * 24 * 60 * 60;
     protected Hash UniqueVoteVoteSchemeId; //1a1v
     protected Hash TokenBallotVoteSchemeId; //1t1v
-    protected Hash TokenBallotVoteSchemeId_NoLock_DayVote; 
+    protected Hash TokenBallotVoteSchemeId_NoLock_DayVote;
+    protected Hash TokenBallotVoteSchemeId_DailyNVote;
     protected string TokenElf = "ELF";
     protected Hash DaoId;
     protected Hash OrganizationDaoId; // organization dao
@@ -54,6 +55,7 @@ public class VoteContractTestBase : TestBase
     protected Hash AdvisoryR1A1VProposalId;
     protected Hash AdvisoryR1T1VProposalId;
     protected Hash AdvisoryR1T1VProposalId_NoLock_DayVote;
+    protected Hash AdvisoryR1T1VProposalId_DailyNVote;
     protected Hash AdvisoryHc1A1VProposalId;
     protected Hash AdvisoryHc1T1VProposalId;
     protected Hash AdvisoryO1A1VProposalId;
@@ -132,6 +134,7 @@ public class VoteContractTestBase : TestBase
         await CreateVoteScheme(VoteMechanism.UniqueVote);
         await CreateVoteScheme(VoteMechanism.TokenBallot);
         await CreateVoteScheme(VoteMechanism.TokenBallot, true, VoteStrategy.DayDistinct);
+        await CreateVoteScheme(VoteMechanism.TokenBallot, true, VoteStrategy.DailyNVotes);
         await CreateDao("DAO", true);
         await CreateDao("NetworkDAO");
         await CreateDao("Organization DAO", false, 2);
@@ -142,7 +145,7 @@ public class VoteContractTestBase : TestBase
     {
         var result = await VoteContractStub.CreateVoteScheme.SendAsync(new CreateVoteSchemeInput
         {
-            VoteMechanism = voteMechanism, WithoutLockToken = withoutLockToken, VoteStrategy = voteStrategy
+            VoteMechanism = voteMechanism, WithoutLockToken = withoutLockToken, VoteStrategy = voteStrategy, VoteCount = 5 * 100000000
         });
 
         var log = GetLogEvent<VoteSchemeCreated>(result.TransactionResult);
@@ -156,7 +159,11 @@ public class VoteContractTestBase : TestBase
                 {
                     TokenBallotVoteSchemeId_NoLock_DayVote = log.VoteSchemeId;
                 }
-                else
+                else if (withoutLockToken && voteStrategy == VoteStrategy.DailyNVotes)
+                {
+                    TokenBallotVoteSchemeId_DailyNVote = log.VoteSchemeId;
+                }
+                else 
                 {
                     TokenBallotVoteSchemeId = log.VoteSchemeId;
                 }
