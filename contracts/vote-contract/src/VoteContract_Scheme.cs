@@ -14,19 +14,26 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
         var voteSchemeId = HashHelper.ConcatAndCompute(HashHelper.ComputeFrom(Context.Self), 
             HashHelper.ComputeFrom(input));
         Assert(State.VoteSchemes[voteSchemeId] == null, "VoteScheme already exists.");
+        if (input.VoteStrategy == VoteStrategy.DailyNVotes)
+        {
+            Assert(input.VoteCount > 0, "Invalid VoteCount.");
+        }
+        
         State.VoteSchemes[voteSchemeId] = new VoteScheme
         {
             SchemeId = voteSchemeId,
             VoteMechanism = input.VoteMechanism,
             WithoutLockToken = input.WithoutLockToken,
-            VoteStrategy = input.VoteStrategy
+            VoteStrategy = input.VoteStrategy,
+            VoteCount = input.VoteCount
         };
         Context.Fire(new VoteSchemeCreated
         {
             VoteSchemeId = voteSchemeId,
             VoteMechanism = input.VoteMechanism,
             WithoutLockToken = input.WithoutLockToken,
-            VoteStrategy = input.VoteStrategy
+            VoteStrategy = input.VoteStrategy,
+            VoteCount = input.VoteCount
         });
         return new Empty();
     }

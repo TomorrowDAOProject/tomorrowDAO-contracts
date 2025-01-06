@@ -3,6 +3,7 @@ using AElf;
 using AElf.Contracts.MultiToken;
 using AElf.Sdk.CSharp;
 using AElf.Types;
+using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 
 namespace TomorrowDAO.Contracts.Vote;
@@ -180,7 +181,16 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
                 Amount = input.VoteAmount,
                 VoteTimestamp = Context.CurrentBlockTime,
                 Option = (VoteOption)input.VoteOption,
-                VoteId = voteId
+                VoteId = voteId,
+                VoteDetails = new VoteDetailList()
+                {
+                    Value = { new VoteDetail
+                        {
+                            Amount = input.VoteAmount,
+                            VoteTimestamp = Context.CurrentBlockTime
+                        }
+                    }
+                }
             };
         }
         else
@@ -188,6 +198,13 @@ public partial class VoteContract : VoteContractContainer.VoteContractBase
             votingRecord.Amount += input.VoteAmount;
             votingRecord.VoteTimestamp = Context.CurrentBlockTime;
             votingRecord.VoteId = voteId;
+            var voteDetails = votingRecord.VoteDetails ?? new VoteDetailList();
+            voteDetails.Value.Add(new VoteDetail
+            {
+                Amount = input.VoteAmount,
+                VoteTimestamp = Context.CurrentBlockTime
+            });
+            votingRecord.VoteDetails = voteDetails;
             State.VotingRecords[input.VotingItemId][Context.Sender] = votingRecord;
         }
 
