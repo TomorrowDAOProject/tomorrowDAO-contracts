@@ -58,6 +58,7 @@ message VoteScheme {
   VoteMechanism vote_mechanism = 3;
   bool without_lock_token = 4;
   VoteStrategy vote_strategy = 5;
+  int32 vote_count = 6;
 }
 
 enum VoteMechanism {
@@ -68,6 +69,7 @@ enum VoteMechanism {
 enum VoteStrategy {
   PROPOSAL_DISTINCT = 0;
   DAY_DISTINCT = 1;
+  DAILY_N_VOTES = 2;
 }
 
 message VotingItemIdList {
@@ -102,6 +104,16 @@ message VotingRecord {
   // Approve/reject/abstain
   VoteOption option = 5;
   aelf.Hash vote_id = 6;
+  VoteDetailList vote_details = 7;
+}
+
+message VoteDetailList {
+  repeated VoteDetail value = 1;
+}
+
+message VoteDetail {
+  int64 amount = 1;
+  google.protobuf.Timestamp vote_timestamp = 2;
 }
 
 enum VoteOption {
@@ -177,6 +189,7 @@ message CreateVoteSchemeInput {
   VoteMechanism vote_mechanism = 1;
   bool without_lock_token = 2;
   VoteStrategy vote_strategy = 3;
+  int32 vote_count = 4;
 }
 
 message VotingRegisterInput {
@@ -245,6 +258,7 @@ message VoteSchemeCreated {
   VoteMechanism vote_mechanism = 2;
   bool without_lock_token = 4;
   VoteStrategy vote_strategy = 5;
+  int32 vote_count = 6;
 }
 
 message VotingItemRegistered {
