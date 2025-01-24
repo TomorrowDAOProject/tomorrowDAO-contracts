@@ -411,9 +411,83 @@ public partial class DAOContractTests : DAOContractTestBase
         });
         result.TransactionResult.Error.ShouldContain(errorMessage);
     }
+    
+    [Theory]
+    [InlineData(-1, 1, 1, "Invalid metadata social media count.")]
+    [InlineData(0, 1, 1, "Invalid metadata social media count.")]
+    public async Task CreateDAOTests_SocialMedia(int count, int keyLength, int valueLength, string errorMessage)
+    {
+        await InitializeAsync();
+
+        if (count == -1)
+        {
+            var result = await DAOContractStub.CreateDAO.SendAsync(new CreateDAOInput
+            {
+                Metadata = new Metadata
+                {
+                    Name = "name",
+                    LogoUrl = "logo",
+                    Description = "des"
+                },
+                GovernanceToken = "ELF",
+                GovernanceMechanism = (int)GovernanceMechanism.Referendum,
+                Members = null,
+                GovernanceSchemeThreshold = new GovernanceSchemeThreshold
+                {
+                    MinimalRequiredThreshold = 1,
+                    MinimalVoteThreshold = 1,
+                    MinimalApproveThreshold = 1,
+                    MaximalRejectionThreshold = 1,
+                    MaximalAbstentionThreshold = 1
+                },
+                HighCouncilInput = null,
+                IsTreasuryNeeded = false,
+                IsNetworkDao = false,
+                ProposalThreshold = 0
+            });
+            result.Transaction.ShouldNotBeNull();
+            result.TransactionResult.TransactionId.ShouldNotBeNull();
+            result.TransactionResult.Status.ShouldBe(TransactionResultStatus.Mined);
+        }
+        else
+        {
+            var result = await DAOContractStub.CreateDAO.SendAsync(new CreateDAOInput
+            {
+                Metadata = new Metadata
+                {
+                    Name = "name",
+                    LogoUrl = "logo",
+                    Description = "des",
+                    SocialMedia =
+                    {
+                        GenerateRandomMap(count,
+                            keyLength,
+                            valueLength)
+                    }
+                },
+                GovernanceToken = "ELF",
+                GovernanceMechanism = (int)GovernanceMechanism.Referendum,
+                Members = null,
+                GovernanceSchemeThreshold = new GovernanceSchemeThreshold
+                {
+                    MinimalRequiredThreshold = 1,
+                    MinimalVoteThreshold = 1,
+                    MinimalApproveThreshold = 1,
+                    MaximalRejectionThreshold = 1,
+                    MaximalAbstentionThreshold = 1
+                },
+                HighCouncilInput = null,
+                IsTreasuryNeeded = false,
+                IsNetworkDao = false,
+                ProposalThreshold = 0
+            });
+            result.Transaction.ShouldNotBeNull();
+            result.TransactionResult.TransactionId.ShouldNotBeNull();
+            result.TransactionResult.Status.ShouldBe(TransactionResultStatus.Mined);
+        }
+    }
 
     [Theory]
-    [InlineData(0, 1, 1, "Invalid metadata social media count.")]
     [InlineData(21, 1, 1, "Invalid metadata social media count.")]
     [InlineData(1, 0, 0, "Invalid metadata social media name.")]
     [InlineData(1, 17, 0, "Invalid metadata social media name.")]
