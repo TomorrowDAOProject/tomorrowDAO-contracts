@@ -62,9 +62,10 @@ public partial class DAOContract
             currentMetadata.Description = inputMetadata.Description;
         }
 
+        currentMetadata.SocialMedia.Clear();
+
         if (inputMetadata.SocialMedia?.Count > 0)
         {
-            currentMetadata.SocialMedia.Clear();
             Assert(inputMetadata.SocialMedia.Count <= DAOContractConstants.SocialMediaListMaxCount, "Invalid metadata social media count.");
             foreach (var name in inputMetadata.SocialMedia.Keys)
             {
@@ -74,7 +75,7 @@ public partial class DAOContract
                 currentMetadata.SocialMedia.Add(name, url);
             }
         }
-        
+
         State.MetadataMap[input.DaoId] = currentMetadata;
         Context.Fire(new MetadataUpdated
         {
