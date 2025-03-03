@@ -1,5 +1,6 @@
 using AElf.Sdk.CSharp;
 using AElf.Types;
+using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 
 namespace TomorrowDAO.Contracts.DAO;
@@ -18,22 +19,23 @@ public partial class DAOContract
                && metadata.Description.Length <= DAOContractConstants.DescriptionMaxLength,
             "Invalid metadata description.");
 
-        Assert(
-            metadata.SocialMedia.Count > 0 &&
-            metadata.SocialMedia.Count <= DAOContractConstants.SocialMediaListMaxCount,
+        Assert(metadata.SocialMedia?.Count <= DAOContractConstants.SocialMediaListMaxCount,
             "Invalid metadata social media count.");
 
-        foreach (var socialMedia in metadata.SocialMedia.Keys)
+        if (metadata.SocialMedia?.Count > 0)
         {
-            Assert(
-                IsStringValid(socialMedia) && socialMedia.Length <= DAOContractConstants.SocialMediaNameMaxLength,
-                "Invalid metadata social media name.");
-            Assert(
-                IsStringValid(metadata.SocialMedia[socialMedia])
-                && metadata.SocialMedia[socialMedia].Length <= DAOContractConstants.SocialMediaUrlMaxLength,
-                "Invalid metadata social media url.");
+            foreach (var socialMedia in metadata.SocialMedia.Keys)
+            {
+                Assert(
+                    IsStringValid(socialMedia) && socialMedia.Length <= DAOContractConstants.SocialMediaNameMaxLength,
+                    "Invalid metadata social media name.");
+                Assert(
+                    IsStringValid(metadata.SocialMedia[socialMedia])
+                    && metadata.SocialMedia[socialMedia].Length <= DAOContractConstants.SocialMediaUrlMaxLength,
+                    "Invalid metadata social media url.");
+            }
         }
-
+        
         State.MetadataMap[daoId] = metadata;
         State.DAONameMap[metadata.Name] = daoId;
     }
@@ -60,9 +62,10 @@ public partial class DAOContract
             currentMetadata.Description = inputMetadata.Description;
         }
 
-        if (inputMetadata.SocialMedia.Count > 0)
+        currentMetadata.SocialMedia.Clear();
+
+        if (inputMetadata.SocialMedia?.Count > 0)
         {
-            currentMetadata.SocialMedia.Clear();
             Assert(inputMetadata.SocialMedia.Count <= DAOContractConstants.SocialMediaListMaxCount, "Invalid metadata social media count.");
             foreach (var name in inputMetadata.SocialMedia.Keys)
             {
@@ -72,7 +75,7 @@ public partial class DAOContract
                 currentMetadata.SocialMedia.Add(name, url);
             }
         }
-        
+
         State.MetadataMap[input.DaoId] = currentMetadata;
         Context.Fire(new MetadataUpdated
         {
