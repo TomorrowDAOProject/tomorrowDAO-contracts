@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+import "Protobuf/base/acs12.proto";
+
+option csharp_namespace = "TomorrowDAO.Contracts.Treasury";
+
+service TreasuryContract {
+  option (aelf.csharp_state) = "TomorrowDAO.Contracts.Treasury.TreasuryContractState";
+  option (aelf.base) = "Protobuf/base/acs12.proto";
+  // Actions
+}
+
+message SymbolList {
+  repeated string data = 1;
+}
+
+message LockInfo {
+  aelf.Hash proposal_id = 1;
+  string symbol = 2;
+  int64 amount = 3;
+  google.protobuf.Timestamp lock_ddl = 4;
+}
+
+// log event
+message TreasuryCreated {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  aelf.Address treasury_account_address = 2;
+  SymbolList symbol_list = 3;
+}
+
+message SupportedStakingTokensAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  SymbolList added_tokens = 2;
+}
+
+message SupportedStakingTokensRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  SymbolList removed_tokens = 2;
+}
+
+message DonationReceived {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+  aelf.Address donor = 4;
+  google.protobuf.Timestamp donation_time = 5;
+}
+
+message TokenStaked {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+  aelf.Address account = 4;  // sender address
+  google.protobuf.Timestamp staked_time = 5;
+}
+
+message TreasuryTokenLocked {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  LockInfo lock_info = 2;
+  aelf.Address proposer = 3;
+}
+
+message TreasuryTransferReleased {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  int64 amount = 2;
+  string symbol = 3;
+  aelf.Address recipient = 4;
+  string memo = 5;
+  aelf.Hash proposal_id = 6;
+  aelf.Address executor = 7;
+}
+
+message TreasuryTokenUnlocked {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  LockInfo lock_info = 2;
+  aelf.Address executor = 3;
+}
+
+message Paused {
+  option (aelf.is_event) = true;
+  aelf.Address account = 1;  // sender address
+  aelf.Hash dao_id = 2;
+}
+
+message Unpaused {
+  option (aelf.is_event) = true;
+  aelf.Address account = 1;  // sender address
+  aelf.Hash dao_id = 2;
+}
+
+message EmergencyTransferred {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  string symbol = 2;
+  int64 amount = 3;
+  aelf.Address recipient = 4;
+  aelf.Address account = 5;  // sender address
+}

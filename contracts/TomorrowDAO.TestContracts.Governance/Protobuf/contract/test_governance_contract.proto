@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+import "Protobuf/base/acs12.proto";
+
+option csharp_namespace = "TomorrowDAO.TestContracts.Governance";
+
+service TestGovernanceContract {
+  option (aelf.csharp_state) = "TomorrowDAO.TestContracts.Governance.TestGovernanceContractState";
+  option (aelf.base) = "Protobuf/base/acs12.proto";
+  
+  rpc Initialize (InitializeInput) returns (google.protobuf.Empty){
+  }
+  rpc AddGovernanceScheme (AddGovernanceSchemeInput) returns (aelf.Address){
+  }
+  rpc CalculateGovernanceSchemeAddress(CalculateGovernanceSchemeAddressInput) returns (aelf.Address){
+    option (aelf.is_view) = true;
+  }
+}
+message InitializeInput {
+  aelf.Address referendum = 1;
+  aelf.Address high_council = 2;
+}
+enum GovernanceMechanism {
+  UNSPECIFIED = 0;
+  REFERENDUM = 1;
+  HIGH_COUNCIL = 2;
+}
+message GovernanceSchemeThreshold {
+  int64 minimal_required_threshold = 1;
+  int64 minimal_vote_threshold = 2;
+  int64 minimal_approve_threshold = 3;
+  int64 maximal_rejection_threshold = 4;
+  int64 maximal_abstention_threshold = 5;
+}
+message AddGovernanceSchemeInput {
+  aelf.Hash dao_id = 1;
+  GovernanceMechanism governance_mechanism = 2;
+  GovernanceSchemeThreshold scheme_threshold = 3;
+  string governance_token = 4;
+}
+message CalculateGovernanceSchemeAddressInput {
+  aelf.Hash dao_id = 1;
+  GovernanceMechanism governance_mechanism = 2;
+}

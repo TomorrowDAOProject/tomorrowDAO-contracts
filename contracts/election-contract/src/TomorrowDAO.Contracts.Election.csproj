@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>TomorrowDAO.Contracts.Election</RootNamespace>
+        <IsContract>true</IsContract>
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    </PropertyGroup>
+    <PropertyGroup>
+        <ObjPath>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/</ObjPath>
+    </PropertyGroup>
+
+    <Target Name="ProtoGeneratedRecognition" AfterTargets="CoreCompile">
+        <ItemGroup>
+            <Compile Include="$(ObjPath)Protobuf/**/*.cs" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="AElf.Sdk.CSharp" Version="1.6.0" />
+        <PackageReference Include="AElf.Tools" Version="1.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+    
+
+    <ItemGroup>
+        <Folder Include="Protobuf\base\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+<!--        <PackageReference Include="AElf.Contracts.Genesis" Version="1.6.0" />-->
+<!--        <PackageReference Include="AElf.Contracts.MultiToken" Version="1.6.0" />-->
+<!--        <PackageReference Include="AElf.Contracts.Consensus.AEDPoS" Version="1.6.0" />-->
+<!--        <PackageReference Include="AElf.EconomicSystem" Version="1.6.0" />-->
+<!--        <PackageReference Include="AElf.GovernmentSystem" Version="1.6.0" />-->
+        <PackageReference Include="coverlet.msbuild" Version="2.5.1" />
+        <PackageReference Include="AElf.Kernel.SmartContract.ExecutionPluginForMethodFee" Version="1.6.0" />
+    </ItemGroup>
+
+</Project>
+    
