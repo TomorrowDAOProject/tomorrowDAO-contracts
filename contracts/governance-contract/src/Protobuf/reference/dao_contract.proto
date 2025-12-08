@@ -1,0 +1,332 @@
+syntax = "proto3";
+
+import "aelf/core.proto";
+import "aelf/options.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+import "Protobuf/base/acs12.proto";
+
+option csharp_namespace = "TomorrowDAO.Contracts.DAO";
+
+service DAOContract {
+  option (aelf.csharp_state) = "TomorrowDAO.Contracts.DAO.DAOContractState";
+  option (aelf.base) = "Protobuf/base/acs12.proto";
+
+  rpc Initialize (InitializeInput) returns (google.protobuf.Empty) {}
+  rpc CreateDAO (CreateDAOInput) returns (google.protobuf.Empty) {}
+  rpc SetSubsistStatus (SetSubsistStatusInput) returns (google.protobuf.Empty) {}
+  rpc GetDAOInfo (aelf.Hash) returns (DAOInfo) {option (aelf.is_view) = true;}
+  rpc GetDAOIdByName (google.protobuf.StringValue) returns (aelf.Hash) {option (aelf.is_view) = true;}
+  rpc GetMetadata (aelf.Hash) returns (Metadata) {option (aelf.is_view) = true;}
+  rpc GetSubsistStatus (aelf.Hash) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc GetGovernanceToken (aelf.Hash) returns (google.protobuf.StringValue) {option (aelf.is_view) = true;}
+  rpc GetInitializedContracts (google.protobuf.Empty) returns (ContractAddressList) {option (aelf.is_view) = true;}
+  rpc GetReferendumAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+  rpc GetHighCouncilAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+  rpc GetOrganizationAddress (aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+
+  // high council
+  rpc EnableHighCouncil (EnableHighCouncilInput) returns (google.protobuf.Empty) {}
+  rpc DisableHighCouncil (aelf.Hash) returns (google.protobuf.Empty) {}
+  rpc GetHighCouncilStatus (aelf.Hash) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc AddHighCouncilMembers (AddHighCouncilMembersInput) returns (google.protobuf.Empty) {}
+  rpc RemoveHighCouncilMembers (RemoveHighCouncilMembersInput) returns (google.protobuf.Empty) {}
+
+  // file
+  rpc UploadFileInfos (UploadFileInfosInput) returns (google.protobuf.Empty) {}
+  rpc RemoveFileInfos (RemoveFileInfosInput) returns (google.protobuf.Empty) {}
+  rpc GetFileInfos (aelf.Hash) returns (FileInfoList) {option (aelf.is_view) = true;}
+
+  // permission
+  rpc HasPermission (HasPermissionInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc AddCreatorPermissions (AddCreatorPermissionsInput) returns (google.protobuf.Empty) {}
+
+  // metadata
+  rpc UpdateMetadata (UpdateMetadataInput) returns (google.protobuf.Empty) {}
+
+  // governance
+  rpc UpdateGovernanceSchemeThreshold (UpdateGovernanceSchemeThresholdInput) returns (google.protobuf.Empty){}
+  rpc RemoveGovernanceScheme (RemoveGovernanceSchemeInput) returns (google.protobuf.Empty){}
+  rpc SetGovernanceToken (SetGovernanceTokenInput) returns (google.protobuf.Empty){}
+  rpc SetProposalTimePeriod (SetProposalTimePeriodInput) returns (google.protobuf.Empty) {}
+
+  //Treasury 
+  rpc SetTreasuryContractAddress (aelf.Address) returns (google.protobuf.Empty) {}
+  rpc GetTreasuryAddress(aelf.Hash) returns (aelf.Address) {option (aelf.is_view) = true;}
+  
+  //Organization
+  rpc AddMember (AddMemberInput) returns (google.protobuf.Empty) {}
+  rpc RemoveMember (RemoveMemberInput) returns (google.protobuf.Empty) {}
+  rpc GetIsMember (GetIsMemberInput) returns (google.protobuf.BoolValue) {option (aelf.is_view) = true;}
+  rpc GetMemberCount (aelf.Hash) returns (google.protobuf.Int64Value) {option (aelf.is_view) = true;}
+}
+
+message InitializeInput {
+  aelf.Address governance_contract_address = 1;
+  aelf.Address vote_contract_address = 2;
+  aelf.Address treasury_contract_address = 3;
+  aelf.Address election_contract_address = 4;
+  aelf.Address timelock_contract_address = 5;
+}
+
+message CreateDAOInput {
+  Metadata metadata = 1;  // basic info
+  string governance_token = 2;  // can be empty
+  int32 governance_mechanism = 3;
+  AddressList members = 4;
+  GovernanceSchemeThreshold governance_scheme_threshold = 5;  // governance scheme threshold for referendum
+  HighCouncilInput high_council_input = 6;
+  bool is_treasury_needed = 7;  // if true, create treasury
+  repeated File files = 8;
+  bool is_network_dao = 9;
+  int64 proposal_threshold = 10;
+}
+
+message HighCouncilInput {
+  HighCouncilConfig high_council_config = 1;  // empty if high council is not enabled
+  GovernanceSchemeThreshold governance_scheme_threshold = 2;  // governance scheme threshold for high council
+  AddressList high_council_members = 3;
+  bool is_high_council_election_close = 4;
+}
+
+message Metadata {
+  string name = 1;
+  string logo_url = 2;
+  string description = 3;                // limit 240
+  map<string, string> social_media = 4;  // Twitter, Facebook, Discord, Telegram, Reddit
+}
+
+message SocialMediaList {
+  repeated string data = 1;
+}
+
+message GovernanceSchemeThreshold {
+  int64 minimal_required_threshold = 1;
+  int64 minimal_vote_threshold = 2;
+  int64 minimal_approve_threshold = 3;     // percentage
+  int64 maximal_rejection_threshold = 4;   // percentage
+  int64 maximal_abstention_threshold = 5;  // percentage
+}
+
+message HighCouncilConfig {
+  int64 max_high_council_member_count = 1;
+  int64 max_high_council_candidate_count = 2;
+  int64 election_period = 3;
+  int64 staking_amount = 4;
+}
+
+message File {
+  string cid = 1;   // id
+  string name = 2;
+  string url = 3;
+}
+
+message FileInfo {
+  File file = 1;
+  google.protobuf.Timestamp upload_time = 2;
+  aelf.Address uploader = 3;
+}
+
+message FileInfoList {
+  map<string, FileInfo> data = 1;  // cid -> FileInfo
+}
+
+enum PermissionType {
+  DEFAULT = 0;         // Referendum and HighCouncil if enabled
+  CREATOR = 1;         // Creator only
+}
+
+enum GovernanceMechanism {
+  REFERENDUM = 0;
+  HIGH_COUNCIL = 1;
+  ORGANIZATION = 2;
+}
+
+message AddressList {
+  repeated aelf.Address value = 1;
+}
+
+message PermissionInfo {
+  aelf.Address where = 1;
+  aelf.Address who = 2;
+  string what = 3;
+}
+
+message DAOInfo {
+  aelf.Hash dao_id = 1;
+  aelf.Address creator = 2;
+  bool subsist_status = 3;
+  string governance_token = 4;
+  ContractAddressList contract_address_list = 5;
+  bool is_network_dao = 6;
+  GovernanceMechanism governance_mechanism = 7;
+  int64 proposal_threshold = 8;
+}
+
+message ContractAddressList {
+  aelf.Address governance_contract_address = 1;
+  aelf.Address vote_contract_address = 2;
+  aelf.Address treasury_contract_address = 3;
+  aelf.Address election_contract_address = 4;
+  aelf.Address timelock_contract_address = 5;
+}
+
+message SetSubsistStatusInput {
+  aelf.Hash dao_id = 1;
+  bool status = 2;
+}
+
+message EnableHighCouncilInput {
+  aelf.Hash dao_id = 1;
+  HighCouncilInput high_council_input = 2;
+}
+
+message UpdateHighCouncilConfigInput {
+  aelf.Hash dao_id = 1;
+  HighCouncilConfig high_council_config = 2;
+}
+
+message UploadFileInfosInput {
+  aelf.Hash dao_id = 1;
+  repeated File files = 2;
+}
+
+message RemoveFileInfosInput {
+  aelf.Hash dao_id = 1;
+  repeated string file_cids = 2;
+}
+
+message HasPermissionInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address where = 2;  // target contract address
+  aelf.Address who = 3;    // address who is granted the permission
+  string what = 4;         // target function name
+}
+
+message AddCreatorPermissionsInput {
+  aelf.Hash dao_id = 1;
+  repeated string method_names = 2;
+}
+
+message UpdateMetadataInput {
+  aelf.Hash dao_id = 1;
+  Metadata metadata = 2;
+}
+
+message UpdateGovernanceSchemeThresholdInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address scheme_address = 2;
+  GovernanceSchemeThreshold scheme_threshold = 3;
+}
+
+message RemoveGovernanceSchemeInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address scheme_address = 2;
+}
+
+message SetGovernanceTokenInput {
+  aelf.Hash dao_id = 1;
+  string governance_token = 2;
+  int64 proposal_threshold = 3;
+}
+
+message SetProposalTimePeriodInput {
+  aelf.Hash dao_id = 1;
+  DaoProposalTimePeriod proposal_time_period = 2;
+}
+
+message AddMemberInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_members = 2;
+}
+
+message RemoveMemberInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_members = 2;
+}
+
+message GetIsMemberInput {
+  aelf.Hash dao_id = 1;
+  aelf.Address member = 2;
+}
+
+message DaoProposalTimePeriod {
+  int64 active_time_period = 1; //day
+  int64 veto_active_time_period = 2; //day
+  int64 pending_time_period = 3; //day
+  int64 execute_time_period = 4; //day
+  int64 veto_execute_time_period = 5; //day
+}
+
+message AddHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList add_high_councils = 2;
+}
+
+message RemoveHighCouncilMembersInput {
+  aelf.Hash dao_id = 1;
+  AddressList remove_high_councils = 2;
+}
+
+// log event
+message DAOCreated {
+  option (aelf.is_event) = true;
+  Metadata metadata = 1;
+  string governance_token = 2;
+  aelf.Hash dao_id = 3;
+  aelf.Address creator = 4;
+  ContractAddressList contract_address_list = 5;
+  bool is_network_dao = 6;
+  aelf.Address treasury_address = 7;
+  GovernanceMechanism governance_mechanism = 8;
+}
+
+message SubsistStatusSet {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  bool status = 2;
+}
+
+message HighCouncilEnabled {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  HighCouncilInput high_council_input = 2;
+  aelf.Address high_council_address = 3;
+}
+
+message HighCouncilDisabled {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+}
+
+message FileInfosUploaded {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  FileInfoList uploaded_files = 2;
+}
+
+message FileInfosRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  FileInfoList removed_files = 2;
+}
+
+message MetadataUpdated {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  Metadata metadata = 2;
+}
+
+message MemberAdded {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList add_members = 2;
+}
+
+message MemberRemoved {
+  option (aelf.is_event) = true;
+  aelf.Hash dao_id = 1;
+  AddressList remove_members = 2;
+}
